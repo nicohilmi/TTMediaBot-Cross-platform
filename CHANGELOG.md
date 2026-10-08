@@ -752,7 +752,7 @@ All notable updates to this fork are documented here, in reverse chronological o
 - **🐕 Fix 4 — watchdog (`bot/__init__.py`, `bot/TeamTalk/__init__.py`):** if the event thread does end by itself (for example a fatal `Connection error` once the configured `reconnection_attempts` is used up), the main loop now notices through `TeamTalk.event_thread_stopped()`, logs `The TeamTalk event thread stopped unexpectedly …`, closes the bot cleanly and exits with code 1 instead of idling silently. A normal shutdown is not affected.
 
 ### ✅ Tests
-- Added `test_teamtalk_event_resilience.py` (14 tests): the sound-device, `CON_CRYPT_ERROR` and `USER_ACCOUNT_*` numbers map to `EventType`; an unknown number returns `NONE` and is reported only once; an error while reading an event, or several in a row, does not end the thread and the next chat message is still delivered; ignored events are skipped quietly; `sys.exit()` still ends the thread; the watchdog reports a thread that died by itself but not one that never started, is running, or is being closed.
+- Covered by 14 unit tests (run locally, not part of the repository): the sound-device, `CON_CRYPT_ERROR` and `USER_ACCOUNT_*` numbers map to `EventType`; an unknown number returns `NONE` and is reported only once; an error while reading an event, or several in a row, does not end the thread and the next chat message is still delivered; ignored events are skipped quietly; `sys.exit()` still ends the thread; the watchdog reports a thread that died by itself but not one that never started, is running, or is being closed.
 
 ### 📁 Files Changed
-- `bot/TeamTalk/structs.py`, `bot/TeamTalk/__init__.py`, `bot/TeamTalk/thread.py`, `bot/__init__.py`, `test_teamtalk_event_resilience.py` (new), `CHANGELOG.md`.
+- `bot/TeamTalk/structs.py`, `bot/TeamTalk/__init__.py`, `bot/TeamTalk/thread.py`, `bot/__init__.py`, `bot/app_vars.py`, `CHANGELOG.md`.
