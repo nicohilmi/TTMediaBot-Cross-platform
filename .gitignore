@@ -1,0 +1,68 @@
+/bots/
+/TeamTalk_DLL/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Project Specific
+# config.json (Allowed)
+cookies.txt
+*.log
+TTMediaBot.log
+TTMediaBotCache.dat
+fast_forensics.py
+*.mp3
+*.m4a
+*.webm
+*.opus
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Binaries that are downloaded separately (see README): remove a line below only
+# if you really want to commit that file (GitHub rejects files over 100 MB).
+/ffmpeg
+/ffmpeg.exe
+/ffprobe
+/ffprobe.exe
+/TeamTalk5.dll
+/libTeamTalk5.so
+
+# Runtime files
+/data/
+youtube_bridge/node_modules/
+youtube_bridge/bridge_cache.json
+youtube_bridge.log

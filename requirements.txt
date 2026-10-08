@@ -1,0 +1,9 @@
+babel
+beautifulsoup4
+numpy
+patool
+portalocker
+pydantic
+pyshorteners
+requests
+httpx[http2]
