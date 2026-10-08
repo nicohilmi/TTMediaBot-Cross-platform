@@ -94,6 +94,7 @@ class TeamTalk:
         self.myself_event_queue: Queue[Event] = Queue()
         self.uploaded_files_queue: Queue[File] = Queue()
         self.thread = TeamTalkThread(bot, self)
+        self._unknown_event_codes: set[int] = set()
         self.reconnect = False
         self.reconnect_attempt = 0
         self.user_account: UserAccount
@@ -111,6 +112,19 @@ class TeamTalk:
         self.state = State.NOT_CONNECTED
         self.tt.closeTeamTalk()
         logging.debug("Teamtalk closed")
+
+    def event_thread_stopped(self) -> bool:
+        """True when the event thread ended by itself (not because of close()).
+
+        That thread is the only reader of the TeamTalk queue; without it the
+        bot hears nothing, so Bot.run() uses this to stop instead of idling.
+        """
+        thread = self.thread
+        return (
+            thread.ident is not None
+            and not thread.is_alive()
+            and not thread.closing
+        )
 
     def connect(self) -> None:
         self.state = State.CONNECTING
@@ -332,6 +346,26 @@ class TeamTalk:
             _str(obj.szInitChannel),
         )
 
+    def get_event_type(self, code: int) -> EventType:
+        """Translate the SDK's event number without ever raising.
+
+        A number missing from EventType used to raise ValueError inside
+        TeamTalkThread, which ended the thread: the bot stopped reading chat
+        and server events while the music kept playing. Unknown events are
+        now reported once and treated as EventType.NONE (ignored).
+        """
+        try:
+            return EventType(code)
+        except ValueError:
+            if code not in self._unknown_event_codes:
+                self._unknown_event_codes.add(code)
+                logging.warning(
+                    "Ignoring unknown TeamTalk event number %s "
+                    "(the SDK is newer than this bot knows)",
+                    code,
+                )
+            return EventType.NONE
+
     def get_event(self, obj: TeamTalkPy.TTMessage) -> Event:
         try:
             channel = self.get_channel_from_obj(obj.channel)
@@ -372,7 +406,7 @@ class TeamTalk:
         except (UnicodeDecodeError, ValueError):
             message = Message("", user, channel, MessageType.NONE)
         return Event(
-            EventType(obj.nClientEvent),
+            self.get_event_type(obj.nClientEvent),
             obj.nSource,
             channel,
             error,

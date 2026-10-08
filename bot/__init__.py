@@ -166,6 +166,17 @@ class Bot:
                 self.last_pre_warm_time = time.time()
                 threading.Thread(target=self._perform_periodic_pre_warm, daemon=True).start()
 
+            # The TeamTalk event thread is the only reader of the TeamTalk queue. If it
+            # ever ends by itself the bot can no longer hear any command, so stop (and
+            # let the start script / service restart it) instead of idling silently.
+            if self.ttclient.event_thread_stopped():
+                logging.critical(
+                    "The TeamTalk event thread stopped unexpectedly, so the bot can no "
+                    "longer receive messages. Shutting down; please start the bot again."
+                )
+                self.close()
+                sys.exit(1)
+
             # Check for update trigger file
             update_file = os.path.join(self.config_manager.config_dir, "update_in_progress")
             if os.path.exists(update_file):

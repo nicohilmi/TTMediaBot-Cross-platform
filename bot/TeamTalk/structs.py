@@ -251,6 +251,17 @@ class File:
         self.username = username
 
 
+def _client_event(name: str, fallback: int) -> int:
+    """Number of a TeamTalk client event.
+
+    Newer SDK builds post events that older TeamTalk5.py bindings do not name
+    (the sound device notifications, for example). The fallbacks are the
+    numbers published in the SDK's TeamTalk.h, so EventType works with either
+    binding.
+    """
+    return getattr(TeamTalkPy.ClientEvent, name, fallback)
+
+
 class EventType(Enum):
     NONE = TeamTalkPy.ClientEvent.CLIENTEVENT_NONE
     CON_SUCCESS = TeamTalkPy.ClientEvent.CLIENTEVENT_CON_SUCCESS
@@ -297,6 +308,27 @@ class EventType(Enum):
     AUDIO_INPUT = TeamTalkPy.ClientEvent.CLIENTEVENT_AUDIOINPUT
     USER_FIRST_STREAM_VOICE_PACKET = (
         TeamTalkPy.ClientEvent.CLIENTEVENT_USER_FIRSTVOICESTREAMPACKET
+    )
+    CON_CRYPT_ERROR = _client_event("CLIENTEVENT_CON_CRYPT_ERROR", 15)
+    USER_ACCOUNT_NEW = _client_event("CLIENTEVENT_CMD_USERACCOUNT_NEW", 410)
+    USER_ACCOUNT_REMOVE = _client_event("CLIENTEVENT_CMD_USERACCOUNT_REMOVE", 420)
+    # Posted by newer SDK builds when the OS adds/removes/changes an audio
+    # device. The bot plays through TeamTalk's virtual device, so these only
+    # need to be recognised (a missing member used to kill TeamTalkThread).
+    SOUND_DEVICE_ADDED = _client_event("CLIENTEVENT_SOUNDDEVICE_ADDED", 1100)
+    SOUND_DEVICE_REMOVED = _client_event("CLIENTEVENT_SOUNDDEVICE_REMOVED", 1110)
+    SOUND_DEVICE_UNPLUGGED = _client_event("CLIENTEVENT_SOUNDDEVICE_UNPLUGGED", 1120)
+    SOUND_DEVICE_NEW_DEFAULT_INPUT = _client_event(
+        "CLIENTEVENT_SOUNDDEVICE_NEW_DEFAULT_INPUT", 1130
+    )
+    SOUND_DEVICE_NEW_DEFAULT_OUTPUT = _client_event(
+        "CLIENTEVENT_SOUNDDEVICE_NEW_DEFAULT_OUTPUT", 1140
+    )
+    SOUND_DEVICE_NEW_DEFAULT_INPUT_COMDEVICE = _client_event(
+        "CLIENTEVENT_SOUNDDEVICE_NEW_DEFAULT_INPUT_COMDEVICE", 1150
+    )
+    SOUND_DEVICE_NEW_DEFAULT_OUTPUT_COMDEVICE = _client_event(
+        "CLIENTEVENT_SOUNDDEVICE_NEW_DEFAULT_OUTPUT_COMDEVICE", 1160
     )
 
 

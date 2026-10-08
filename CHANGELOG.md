@@ -736,3 +736,23 @@ All notable updates to this fork are documented here, in reverse chronological o
 
 ### 📁 Files Changed
 - `install_windows.bat`, `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — Bot No Longer Freezes After Playing for a While *(10/09/2026)*
+
+> **Maintained by:** [YOUR NAME] — [YOUR GITHUB URL]
+
+### 🐛 Fixed: Bot Stopped Answering Commands While the Music Kept Playing
+- **🔎 Symptom:** after the bot had been running for a while it stopped reacting to chat commands (`p`, `n`, `s`, …) while the queue kept playing on its own, until the bot was restarted.
+- **🔎 Cause (from `TTMediaBot.log`):** `Unhandled exception in thread TeamTalkThread … ValueError: 1110 is not a valid EventType`, seen at 17:12:36 and again at 17:20:05. 1110 is `CLIENTEVENT_SOUNDDEVICE_REMOVED`, one of the sound-device notifications (1100–1160) that newer TeamTalk SDK builds post when Windows adds, removes or changes an audio device (they appear in the SDK 5.22A documentation, not in the older 5.11A one). `EventType` did not list them, so converting the event raised `ValueError`, which ended `TeamTalkThread`, the only reader of the TeamTalk message queue. The rest of the bot kept running (pre-warming and track changes continued for two more hours in the log) but could no longer hear the channel or the server, so it looked frozen.
+- **🛡️ Fix 1 — known events (`bot/TeamTalk/structs.py`):** `EventType` now includes `CON_CRYPT_ERROR` (15), `USER_ACCOUNT_NEW` (410), `USER_ACCOUNT_REMOVE` (420) and the sound-device events `SOUND_DEVICE_ADDED`, `SOUND_DEVICE_REMOVED`, `SOUND_DEVICE_UNPLUGGED`, `SOUND_DEVICE_NEW_DEFAULT_INPUT`, `SOUND_DEVICE_NEW_DEFAULT_OUTPUT`, `SOUND_DEVICE_NEW_DEFAULT_INPUT_COMDEVICE` and `SOUND_DEVICE_NEW_DEFAULT_OUTPUT_COMDEVICE` (1100–1160). The numbers fall back to the SDK's published values when the `TeamTalk5.py` binding does not name them, so an older binding still imports. The bot plays through TeamTalk's virtual sound device, so these events only need to be recognised and ignored.
+- **🛡️ Fix 2 — unknown events never raise (`bot/TeamTalk/__init__.py`):** the new `TeamTalk.get_event_type()` converts the event number and treats anything unknown as `EventType.NONE` (ignored). Each unknown number is logged once as `Ignoring unknown TeamTalk event number N …`, so a future SDK update cannot repeat this.
+- **🛡️ Fix 3 — the event thread survives errors (`bot/TeamTalk/thread.py`):** the body of the loop moved into `TeamTalkThread.handle_event()` and every pass is wrapped. Any error while processing one event is logged as `Error while handling a TeamTalk event; the event thread keeps running (failure #N)` (full traceback for the first 5 in a row, then every 100th) and the thread carries on, with a short pause if the same error repeats. `sys.exit(1)` for fatal connection/login errors is a `SystemExit` and still ends the thread on purpose. Added the `TeamTalkThread.closing` property.
+- **🐕 Fix 4 — watchdog (`bot/__init__.py`, `bot/TeamTalk/__init__.py`):** if the event thread does end by itself (for example a fatal `Connection error` once the configured `reconnection_attempts` is used up), the main loop now notices through `TeamTalk.event_thread_stopped()`, logs `The TeamTalk event thread stopped unexpectedly …`, closes the bot cleanly and exits with code 1 instead of idling silently. A normal shutdown is not affected.
+
+### ✅ Tests
+- Added `test_teamtalk_event_resilience.py` (14 tests): the sound-device, `CON_CRYPT_ERROR` and `USER_ACCOUNT_*` numbers map to `EventType`; an unknown number returns `NONE` and is reported only once; an error while reading an event, or several in a row, does not end the thread and the next chat message is still delivered; ignored events are skipped quietly; `sys.exit()` still ends the thread; the watchdog reports a thread that died by itself but not one that never started, is running, or is being closed.
+
+### 📁 Files Changed
+- `bot/TeamTalk/structs.py`, `bot/TeamTalk/__init__.py`, `bot/TeamTalk/thread.py`, `bot/__init__.py`, `test_teamtalk_event_resilience.py` (new), `CHANGELOG.md`.
