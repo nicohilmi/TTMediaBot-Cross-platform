@@ -756,3 +756,78 @@ All notable updates to this fork are documented here, in reverse chronological o
 
 ### 📁 Files Changed
 - `bot/TeamTalk/structs.py`, `bot/TeamTalk/__init__.py`, `bot/TeamTalk/thread.py`, `bot/__init__.py`, `bot/app_vars.py`, `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — YouTube Bridge Stall Protection *(10/10/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### 🐛 Fixed: A YouTube Request That Hung Left `p` Waiting for About 15 Seconds
+- **🔎 Symptom:** now and then a command waited far longer than normal. `TTMediaBot.log` recorded `YTM Search (Fast) finished in 15373…ms` for `p sial` and a next-track prefetch of about the same length (15.4 s), while the usual search takes about half a second and a stream resolution well under a second. The network of the host is unstable (`Server lost` appears in the log).
+- **🔎 Cause:** not confirmed. The bot opens a new connection to the bridge for every call, and none of the bridge's own steps in six recorded bridge sessions lasted longer than 6.7 s, so these two waits could not be matched to a bridge step. The most likely place for a hang is a pooled connection to YouTube that died silently. The timestamped bridge log (see *Timestamped Bridge Log and Request Diagnostics*) is meant to show where such a wait happens if it comes back.
+- **🛡️ Fix — hung requests are repeated on a fresh connection (`youtube_bridge/server.mjs`):** the new `retryOnStall()` abandons a call that does not answer within its limit and repeats it, so the repeat cannot reuse the busy connection. Searches wait 5 s and are tried up to three times, player (stream) requests wait 8 s and are tried up to twice, and the keep-alive Music search waits 5 s and is tried twice. Only hangs are repeated: an error from YouTube or "no streaming data" is reported at once without a retry.
+- **⏱️ Fix — PO-token timeout:** a request to the bgutil provider now gives up after 8 s instead of waiting indefinitely; the bridge then continues without a token as it already did when the provider was down.
+- **🎚️ Tunable limits:** `YOUTUBE_BRIDGE_STALL_TIMEOUT_MS` (searches, default `5000`), `YOUTUBE_BRIDGE_PLAYER_TIMEOUT_MS` (player requests, default `8000`) and `YOUTUBE_BRIDGE_POT_TIMEOUT_MS` (PO-token requests, default `8000`).
+
+### ✅ Tests
+- The 9 bridge unit tests (`node --test`) still pass.
+- Checked locally with a stand-in for YouTube.js (not part of the repository): a search that hangs once is repeated after its limit and then answers; a player request that hangs once is repeated and resolves. Without the change the same hung search never answered.
+
+### 📁 Files Changed
+- `youtube_bridge/server.mjs`, `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — Third Fallback Client and More Video Link Formats *(10/10/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### 🐛 Fixed: The `TV_EMBEDDED` Fallback Client Was Rejected as `Invalid client`
+- **🔎 Symptom (from `youtube_bridge.log`):** `TVHTML5_SIMPLY_EMBEDDED_PLAYER: Invalid client` appeared whenever the first two clients failed. Three videos then failed on every client (`No valid URL to decipher` for the YouTube Music and mobile web clients, followed by the rejected third client).
+- **🔎 Cause:** the bridge passed the enum value `ClientType.TV_EMBEDDED` (`TVHTML5_SIMPLY_EMBEDDED_PLAYER`) to `getBasicInfo()`. According to the YouTube.js documentation that option takes the client key `TV_EMBEDDED`, so the third fallback client could never run.
+- **🛡️ Fix:** `youtube_bridge/server.mjs` now passes the key `TV_EMBEDDED` (constant `TV_EMBEDDED_CLIENT`) both when choosing the client list and when deciding that this client takes no PO token. Whether the client then returns a playable stream is up to YouTube; it now gets the chance to try.
+
+### 🐛 Fixed: `u` Rejected `youtube.com/live/…` Links
+- **🔎 Symptom:** `u https://www.youtube.com/live/…` failed with `Invalid YouTube URL or video ID`, because the bridge only recognised `youtu.be`, `?v=` and `/shorts/` links.
+- **🛡️ Fix:** `extractVideoId()` now also accepts `/live/`, `/embed/` and `/v/` links. Path-style links must carry a valid 11-character video ID; anything else is still rejected.
+- **ℹ️ Note:** a stream that is live right now may still fail to play, because the bridge selects regular audio formats and does not use the live (HLS) manifest.
+
+### ✅ Tests
+- Checked locally with a stand-in for YouTube.js (not part of the repository): the `TV_EMBEDDED` client is accepted and resolves when it is the only working client, whereas the previous code reproduced `Invalid client`; links in the `youtu.be`, `?v=`, `music.youtube.com`, `/shorts/`, `/live/` and `/embed/` forms return the right video ID, while a too-short ID and a channel URL are rejected.
+
+### 📁 Files Changed
+- `youtube_bridge/server.mjs`, `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — Timestamped Bridge Log and Request Diagnostics *(10/10/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### 🛠️ Changed: `youtube_bridge.log` Can Now Be Lined Up With `TTMediaBot.log`
+- **🔎 Why:** the bridge log had no timestamps, so a slow command recorded in `TTMediaBot.log` could not be matched with what the bridge was doing at that moment.
+- **🕒 Timestamps:** every bridge log line now starts with a local timestamp in the same format as `TTMediaBot.log` (`YYYY-MM-DD HH:MM:SS,mmm`).
+- **📥 Request log:** new `[youtube-bridge-http]` lines mark when a request reaches the bridge (`->`) and when it finishes (`<-`), with the status code and `handled_ms`. The health check is not logged. If the bot waited much longer than `handled_ms`, the delay happened outside the bridge.
+- **🧊 Event-loop lag:** new `[youtube-bridge-lag]` lines appear when the whole bridge process was frozen for more than one second, which would delay every request even though no single step looks slow.
+- **⏳ Stall lines:** `[youtube-bridge-stall]` lines show which request hung, which attempt it was and whether it will be repeated.
+
+### ✅ Tests
+- Checked locally with a stand-in for YouTube.js (not part of the repository): timestamps and the request lines appear, and the lag line appears when the process is blocked for about 1.5 s. The 9 bridge unit tests still pass.
+
+### 📁 Files Changed
+- `youtube_bridge/server.mjs`, `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — Complete Windows Guide (`README_WINDOWS.md`) *(10/10/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### 📘 Added: Windows Documentation That Mirrors the Main README
+- **📄 New file:** `README_WINDOWS.md` covers requirements, step-by-step installation with `install_windows.bat`, configuration (including JSON path escaping and the command-line options), running the bot and its start-up time, the YouTube bridge and PO-token provider, the full command list, cookies on Windows, supported languages, troubleshooting, FAQ, logs and monitoring, updating every component, and uninstalling.
+- **🧭 Logs explained:** the guide describes every bridge log line (`[youtube-bridge-timing]`, `[youtube-bridge-http]`, `[youtube-bridge-stall]`, `[youtube-bridge-lag]`, `POT provider unavailable`) and how to find where a slow command lost its time.
+- **📌 Unchanged:** `README.md` is not modified; it keeps describing the Linux and Docker deployment.
+
+### 📁 Files Changed
+- `README_WINDOWS.md` (new), `CHANGELOG.md`.
