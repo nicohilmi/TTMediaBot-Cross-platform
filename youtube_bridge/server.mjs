@@ -7,6 +7,30 @@ import { ClientType, Innertube, UniversalCache, Platform } from 'youtubei.js';
 import { ExpiringLruCache } from './cache.mjs';
 import { musicItemPayload, normalizeSearchKey, streamCacheTtlMs } from './media.mjs';
 
+// --- log timestamps begin ---
+// Every line gets a local-time stamp in the same format as TTMediaBot.log, so the two
+// files can be lined up when a request is slow.
+function logStamp() {
+  const d = new Date();
+  const pad = (n, w = 2) => String(n).padStart(w, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())},${pad(d.getMilliseconds(), 3)}`;
+}
+for (const level of ['log', 'warn', 'error']) {
+  const original = console[level].bind(console);
+  console[level] = (...args) => original(`[${logStamp()}]`, ...args);
+}
+
+// Reports when the whole Node process was frozen (e.g. a long synchronous job or the machine
+// pausing it), which would delay every request even though no single step looks slow.
+const LAG_CHECK_MS = 500;
+let lagExpectedAt = performance.now() + LAG_CHECK_MS;
+setInterval(() => {
+  const lagMs = performance.now() - lagExpectedAt;
+  if (lagMs > 1000) console.warn(`[youtube-bridge-lag] event loop was blocked for ${Math.round(lagMs)}ms`);
+  lagExpectedAt = performance.now() + LAG_CHECK_MS;
+}, LAG_CHECK_MS).unref();
+// --- log timestamps end ---
+
 const HOST = process.env.YOUTUBE_BRIDGE_HOST || '127.0.0.1';
 const PORT = Number(process.env.YOUTUBE_BRIDGE_PORT || 4417);
 const POT_URL = process.env.POT_PROVIDER_URL || 'http://127.0.0.1:4416/get_pot';
@@ -16,6 +40,48 @@ const USER_AGENT = process.env.YOUTUBE_BRIDGE_USER_AGENT ||
 
 // YouTube.js 18 requires an evaluator to decipher player signatures/nsig.
 Platform.shim.eval = async (data) => new Function(data.output)();
+
+// --- stall guard begin ---
+// Unstable networks leave pooled keep-alive sockets dead without any error, so a request
+// can hang for ~15 s before it fails. A stalled call is abandoned after a short time and
+// repeated; the repeat cannot reuse the busy socket, so it opens a fresh connection.
+// Only stalls are retried: real errors (HTTP 4xx/5xx, "no streaming data") pass straight through.
+const STALL_TIMEOUT_MS = Number(process.env.YOUTUBE_BRIDGE_STALL_TIMEOUT_MS || 5000);
+const POT_TIMEOUT_MS = Number(process.env.YOUTUBE_BRIDGE_POT_TIMEOUT_MS || 8000);
+
+class StallError extends Error {
+  constructor(label, timeoutMs) {
+    super(`${label} stalled for ${timeoutMs} ms`);
+    this.name = 'StallError';
+  }
+}
+
+async function retryOnStall(label, operation, { timeoutMs = STALL_TIMEOUT_MS, retries = 2 } = {}) {
+  let lastError;
+  for (let attempt = 1; attempt <= retries + 1; attempt += 1) {
+    const startedAt = performance.now();
+    let timer;
+    const stalled = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new StallError(label, timeoutMs)), timeoutMs);
+    });
+    try {
+      return await Promise.race([operation(), stalled]);
+    } catch (error) {
+      if (!(error instanceof StallError)) throw error;
+      lastError = error;
+      const action = attempt <= retries ? 'retrying on a new connection' : 'giving up';
+      console.warn(`[youtube-bridge-stall] ${label} attempt ${attempt}/${retries + 1} stalled after ${Math.round(performance.now() - startedAt)}ms, ${action}`);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastError;
+}
+// --- stall guard end ---
+
+// getBasicInfo({ client }) takes the InnerTubeClient key ('TV_EMBEDDED'), not the
+// ClientType enum value ('TVHTML5_SIMPLY_EMBEDDED_PLAYER'), which it rejects as "Invalid client".
+const TV_EMBEDDED_CLIENT = 'TV_EMBEDDED';
 
 const SESSION_CACHE_MAX_ENTRIES = 64;
 const sessionCache = new Map();
@@ -212,7 +278,8 @@ async function getPoToken(contentBinding) {
     const response = await fetch(POT_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ content_binding: contentBinding })
+      body: JSON.stringify({ content_binding: contentBinding }),
+      signal: AbortSignal.timeout(POT_TIMEOUT_MS)
     });
     if (!response.ok) {
       const body = await response.text();
@@ -234,8 +301,8 @@ function extractVideoId(input) {
     const url = new URL(input);
     if (url.hostname === 'youtu.be') return url.pathname.split('/').filter(Boolean)[0] || null;
     if (url.searchParams.get('v')) return url.searchParams.get('v');
-    const shorts = url.pathname.match(/^\/shorts\/([^/?]+)/);
-    if (shorts) return shorts[1];
+    const pathId = url.pathname.match(/^\/(?:shorts|live|embed|v)\/([A-Za-z0-9_-]{11})(?:[/?#]|$)/);
+    if (pathId) return pathId[1];
   } catch {}
   return null;
 }
@@ -321,7 +388,11 @@ function formatPayload(format) {
 
 async function getPlayableInfo(session, videoId, client, poToken) {
   const targetClient = client === 'YTMUSIC' ? ClientType.MWEB : client;
-  return session.getBasicInfo(videoId, { client: targetClient, po_token: poToken });
+  return retryOnStall(
+    `player ${videoId} client=${targetClient}`,
+    () => session.getBasicInfo(videoId, { client: targetClient, po_token: poToken }),
+    { timeoutMs: Number(process.env.YOUTUBE_BRIDGE_PLAYER_TIMEOUT_MS || 8000), retries: 1 }
+  );
 }
 
 function playabilityDescription(info) {
@@ -334,8 +405,8 @@ async function resolveFormat(context, videoId, requestedClient, formatOptions) {
   // WEB is SABR-only for many videos in 2026. MWEB still exposes classic
   // adaptive formats and is the preferred web playback client here.
   const clients = requestedClient === 'YTMUSIC'
-    ? ['YTMUSIC', 'MWEB', ClientType.TV_EMBEDDED]
-    : ['MWEB', ClientType.TV_EMBEDDED];
+    ? ['YTMUSIC', 'MWEB', TV_EMBEDDED_CLIENT]
+    : ['MWEB', TV_EMBEDDED_CLIENT];
   const failures = [];
   const { session } = context;
 
@@ -343,7 +414,7 @@ async function resolveFormat(context, videoId, requestedClient, formatOptions) {
     const clientStartedAt = performance.now();
     try {
       const poStartedAt = performance.now();
-      const poToken = client === ClientType.TV_EMBEDDED
+      const poToken = client === TV_EMBEDDED_CLIENT
         ? undefined
         : await getPoToken(videoId);
       console.log(`[youtube-bridge-timing] video=${videoId} client=${client} stage=po-token elapsed_ms=${Math.round(performance.now() - poStartedAt)} available=${Boolean(poToken)}`);
@@ -541,11 +612,11 @@ async function searchVideos(body) {
     const session = await getSearchSession();
     try {
       if (mode === 'music') {
-        const rawRes = await session.actions.execute('/search', {
+        const rawRes = await retryOnStall(`search music "${query}"`, () => session.actions.execute('/search', {
           query,
           params: 'Eg-KAQwIARAAGAAgACgAMABqChAEEAMQCRAFEAo%3D',
           client: 'YTMUSIC'
-        });
+        }));
         const tab = rawRes.data?.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer;
         const sections = tab?.content?.sectionListRenderer?.contents || [];
         const ytmEntries = [];
@@ -571,11 +642,11 @@ async function searchVideos(body) {
         }
         if (ytmEntries.length > 0) return ytmEntries.slice(0, 50);
       } else {
-        const rawRes = await session.actions.execute('/search', {
+        const rawRes = await retryOnStall(`search video "${query}"`, () => session.actions.execute('/search', {
           query,
           params: 'EgIQAQ%3D%3D',
           client: 'WEB'
-        });
+        }));
         const ytContents = rawRes.data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
         const ytEntries = [];
         for (const sec of ytContents) {
@@ -748,6 +819,13 @@ async function getDownloadPlan(body) {
 }
 
 const server = http.createServer(async (req, res) => {
+  const requestStartedAt = performance.now();
+  if (req.url !== '/health') {
+    console.log(`[youtube-bridge-http] -> ${req.method} ${req.url}`);
+    res.on('finish', () => {
+      console.log(`[youtube-bridge-http] <- ${req.method} ${req.url} status=${res.statusCode} handled_ms=${Math.round(performance.now() - requestStartedAt)}`);
+    });
+  }
   try {
     if (req.method === 'GET' && req.url === '/health') {
       return json(res, 200, { ok: true, version: '2' });
@@ -782,7 +860,7 @@ server.listen(PORT, HOST, () => {
   setInterval(async () => {
     try {
       const session = await getSearchSession();
-      await session.music.search('ping', { type: 'song' }).catch(() => {});
+      await retryOnStall('keepalive ping', () => session.music.search('ping', { type: 'song' }), { timeoutMs: 5000, retries: 1 }).catch(() => {});
     } catch {}
   }, 45000).unref();
 });
