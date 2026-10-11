@@ -848,3 +848,63 @@ All notable updates to this fork are documented here, in reverse chronological o
 
 ### 📁 Files Changed
 - `bot/tt_trial_dialog.py` (new), `bot/__init__.py`, `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — Fade-Out When Stopping With `s` *(10/11/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### ✨ Added: `s` Lowers the Volume Slowly, Then Stops
+- **🎚️ What you hear:** when a track is playing, `s` no longer cuts the sound. The volume falls to silence over `player.fade_out_duration` seconds (default `3.0`), then playback stops. The channel message "<nickname> stopped playback" is sent right away, so nobody waits for it.
+- **📉 An even fade:** the level falls in a straight line on the dB scale (48 dB over the whole fade). Hearing is roughly logarithmic, so this sounds like a steady fade; a straight ramp of the amplitude seems to drop early and then linger.
+- **🔒 Your volume is not touched:** the fade is a separate gain factor inside the FFmpeg engine, applied per 20 ms frame with no clicks. `v` still shows the same value afterwards, and the next track starts at full level.
+- **🎛️ On and off:** new admin command `fo`. `fo` switches the fade-out on or off, `fo on` / `fo off` set it, and `fo 5` sets a length of 5 seconds (0.5 to 15) and turns it on. It is kept until the bot stops; `sc` saves it. The same two options exist in `config.json`: `player.fade_out_on_stop` and `player.fade_out_duration`.
+- **🖐️ Interrupting the fade:** `s` again during the fade stops at once. `p` with a query, `u`, `n`, `b`, `c` or a seek during the fade cancels the stop and the new playback is heard at full level. A track that ends by itself during the fade does not start the next one. Paused playback is stopped without a fade.
+- **📌 Unchanged:** `player.volume_fading` (the stepwise change made by `v`) and every other place that stops playback (the end of the playlist, the auto-return after `jc`, closing the bot) still stop at once.
+
+### ✅ Tests
+- New `test_fade_out.py`: the curve (straight in dB, silent at the end, stays silent), the engine with real FFmpeg (the level falls step by step, new playback or a stop ends the fade, a track that ends during it, paused or idle playback, full level afterwards) and the `Player` rules. The 13 existing engine tests still pass.
+
+### 📁 Files Changed
+- `bot/player/ffmpeg_engine.py`, `bot/player/__init__.py`, `bot/config/models.py`, `bot/commands/user_commands.py`, `bot/commands/admin_commands.py`, `bot/commands/__init__.py`, `config_default.json`, `README.md`, `README_WINDOWS.md`, `test_fade_out.py` (new), `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — Version 4.1: Update Notices From GitHub and `install` *(10/11/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### 🏷️ Changed: The Bot Is Now Version 4.1
+- `app_version` in `bot/app_vars.py` is `4.1`, so the TeamTalk client name (`TTMediaBot-V4.1`) and the `a` command show it.
+
+### ✨ Added: The Bot Watches Your GitHub Repository
+- **🔔 Notice in the channel:** every `updater.check_interval_minutes` minutes (default `60`, minimum `1`) the bot asks GitHub for the newest commit of the branch it runs on. When there is a new one, it posts a short notice in the TeamTalk channel: installed and available version (when the version number changed), the latest change with its author and time, how many changes the update contains, and how to install it. Each new commit is announced once; a bot that was offline announces at its next check.
+- **⬇️ `install` (admin):** checks again, runs `git pull --ff-only`, tells the channel that it is restarting, restarts, and says "Update completed successfully! I am back online." when it is back (the same messages `update.sh` uses). It answers "TTMediaBot is up to date" when there is nothing to install.
+- **🧪 Cheap and safe:** the check is `git ls-remote`, which downloads nothing and has no rate limit; `git fetch` only runs when the newest commit is new. Every git call has a time limit and can never ask for a password (no terminal prompt, no Git Credential Manager window, no ssh prompt), so a bad network or credential cannot freeze the bot. Credentials inside a remote URL are removed from messages and the log.
+- **🛟 What it will not do:** it never overwrites files you edited by hand (`--ff-only`), never updates a copy that has commits that are not on GitHub, and never updates a folder that is not its own Git clone. It answers with the reason and changes nothing. When an update changes `requirements.txt`, the update is installed but the bot does not restart into missing packages: it asks you to run `pip install -r requirements.txt` and send `rs`.
+- **⚙️ Settings:** new `updater` section in `config.json`: `enabled` (`true`), `check_interval_minutes` (`60`), `remote` (`"origin"`). With `enabled` set to `false` only the background checks stop; `install` still works.
+- **📝 Log:** `[Updater]` lines for announcements, installations and the first occurrence of each problem.
+
+### ✅ Tests
+- New `test_updater.py` uses real Git: a bare "GitHub" repository, a developer clone and the bot folder. It covers an unchanged repository, one or several new commits, the new version number, one fetch per new commit, changed requirements, installing, local commits that are not on GitHub, a diverged copy, hand edits that clash, a folder that is not a clone or not the repository root, an unreachable remote, credentials in URLs, one announcement per update, an offline bot, and the `install` command (restart, no restart, errors, two installations at once).
+
+### 📁 Files Changed
+- `bot/updater.py` (new), `bot/__init__.py`, `bot/app_vars.py`, `bot/config/models.py`, `bot/commands/admin_commands.py`, `bot/commands/__init__.py`, `config_default.json`, `README.md`, `README_WINDOWS.md`, `test_updater.py` (new), `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — Refused Commands Are Logged, `ajc` Can No Longer Hang *(10/11/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### 🔎 Fixed: A Command the Bot Refused Left No Trace in the Log
+- **🔎 Why:** the log of a user typing `jn` showed "Executing command 'jn'" and then nothing. `jn` is not a command (the join command is `jc`; `ajc` for admins), and the reply to a refused or unknown command was never logged, so the log looked as if the command had hung.
+- **📝 Now:** `Command 'x' from user NAME was refused: <reason>` (for example "You are not in bot's channel") and `Unknown command in message '...' from user NAME` are written at `INFO` level.
+
+### 🛠️ Fixed: `ajc` Waited Forever for the Server
+- **🔎 Why:** the admin join command looped until the server confirmed the join, with no exit. A lost confirmation left its thread spinning and the administrator without any reply.
+- **✅ Now:** it waits at most 10 seconds and always answers: "Joined the channel", the server's error, or "No confirmation from the server, the bot may not have joined the channel" (also logged as a warning). The error text is now translated before it is filled in.
+
+### 📁 Files Changed
+- `bot/commands/__init__.py`, `bot/commands/admin_commands.py`, `CHANGELOG.md`.

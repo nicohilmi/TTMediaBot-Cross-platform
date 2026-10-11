@@ -180,6 +180,8 @@ All settings are in `config.json`. If you want the complete list of options, `co
 | `player.default_volume` | `50` | Volume at startup. |
 | `player.max_volume` | `100` | Highest volume that can be set. |
 | `player.volume_fading` | `true` | Fade the volume when stopping or changing track. |
+| `player.fade_out_on_stop` | `true` | `s` lowers the volume to silence before it stops. Admins can switch it with `fo`. |
+| `player.fade_out_duration` | `3.0` | Length of that fade-out in seconds. `fo 5` sets it to 5. |
 | `player.seek_step` | `5` | Default seconds for `sb` and `sf`. |
 | `player.ffmpeg_path` | `""` | Force a specific FFmpeg. Empty means auto-detect. |
 | `player.buffer_seconds` | `5.0` | Seconds of decoded audio kept ahead of playback to ride out network jitter. |
@@ -190,6 +192,9 @@ All settings are in `config.json`. If you want the complete list of options, `co
 | `teamtalk.reconnection_attempts` | `-1` | How many times the bot retries after losing the server. `-1` means forever. |
 | `teamtalk.reconnection_timeout` | `10` | Seconds between reconnection attempts. |
 | `teamtalk.users.admins` | `["admin"]` | TeamTalk usernames allowed to use admin commands. |
+| `updater.enabled` | `true` | Check GitHub for new commits in the background and announce them in the channel. |
+| `updater.check_interval_minutes` | `60` | Minutes between checks (1 or more). |
+| `updater.remote` | `"origin"` | Git remote to watch. The branch is the one the bot folder is on. |
 | `teamtalk.users.banned_users` | `[]` | Usernames that cannot use the bot. |
 | `services.default_service` | `"yt"` | Service used at startup: `yt` or `ytm`. |
 | `services.yt.cookiefile_path` | `""` | Path to your `cookies.txt`. See [cookies](#-youtube--youtube-music-cookies). |
@@ -318,7 +323,7 @@ Send these commands to the bot via private message (PM) or in the channel (if en
 | **h** | | Shows command help. |
 | **p** | `[query]` | Plays tracks found for query. If no query, pauses/resumes. |
 | **u** | `[url]` | Plays a stream/file from a direct URL. |
-| **s** | | Stops playback. |
+| **s** | | Stops playback. The volume fades out first (see `fo`). |
 | **n** | `[number/?]` | Plays the next track, jumps to a positive or negative track index, or reports the current position with `?`. |
 | **b** | | Plays the previous track. |
 | **v** | `[0-100]` | Sets volume. No arg shows current volume. |
@@ -374,6 +379,8 @@ Send these commands to the bot via private message (PM) or in the channel (if en
 | **rs** | | Restarts the bot. |
 | **q** | | Quits the bot. |
 | **gcid** | | Gets the current channel ID. |
+| **fo** | `[on/off/seconds]` | Turns the fade-out of `s` on or off (no option switches it), or sets its length in seconds. |
+| **install** | | Installs the latest update from GitHub (`git pull`), then restarts the bot. |
 
 ---
 
@@ -609,6 +616,27 @@ git pull
 ```
 
 If you downloaded a ZIP instead, download the new ZIP, extract it over the folder and keep your `my-config.json`, `cookies.txt` and `data\` folder.
+
+### Update notices from GitHub
+
+When the bot folder is a Git clone (you installed with `git clone`), the bot looks on GitHub by itself every `updater.check_interval_minutes` minutes. When your repository has a new commit it posts a notice in the channel, for example:
+
+```text
+Update available
+A new version of TTMediaBot is ready to install.
+Installed version: 4.1 (85402d3)
+Available version: 4.2 (9f3c2ab)
+Latest change: Fix the reconnect loop (Nico Hilmi, 2026-10-11 14:05)
+To install it, an administrator can send: install
+The bot will restart automatically to finish the update.
+```
+
+An administrator sends `install`. The bot runs `git pull --ff-only`, tells the channel that it is restarting and starts again by itself. Each new commit is announced once.
+
+- Git must be installed and in the `PATH`. A bot that was installed from a ZIP file is not a Git clone and cannot update itself this way; the log says so once.
+- `git pull --ff-only` refuses to overwrite files you edited by hand when the update changes the same files, and it refuses when the folder has commits that are not on GitHub. The bot then answers with the reason and changes nothing. Keep your own settings in `my-config.json`, as described above.
+- If an update changes `requirements.txt`, the bot installs the update but does not restart. Run `venv\Scripts\python.exe -m pip install -U -r requirements.txt`, then send `rs`.
+- Set `updater.enabled` to `false` to stop the background checks. `install` still works when you send it.
 
 ### Python packages
 

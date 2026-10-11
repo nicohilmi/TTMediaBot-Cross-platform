@@ -36,6 +36,7 @@ from bot import (
     services,
     sound_devices,
     translator,
+    updater,
     app_vars,
 )
 
@@ -91,6 +92,7 @@ class Bot:
         self.service_manager = services.ServiceManager(self)
         self.module_manager = modules.ModuleManager(self)
         self.command_processor = commands.CommandProcessor(self)
+        self.update_checker = updater.UpdateChecker(self)
         
         # JC command tracking
         self.jc_requested_by_user_id: Optional[int] = None
@@ -123,6 +125,7 @@ class Bot:
         self.player.run()
         self.tt_player_connector.start()
         self.command_processor.run()
+        self.update_checker.start()
         logging.info("Started")
         logging.info(f"Processing {len(self.config.general.start_commands)} startup command(s)...")
         startup_context_user = User(
@@ -218,6 +221,7 @@ class Bot:
 
     def close(self) -> None:
         logging.debug("Closing bot")
+        self.update_checker.stop()
         if getattr(self, "is_updating", False):
             try:
                 msg = self.translator.translate("The bot is restarting now to apply the update. See you in a moment!")

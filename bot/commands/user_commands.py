@@ -137,14 +137,28 @@ class StopCommand(Command):
 
     def __call__(self, arg: str, user: User) -> Optional[str]:
         if self.player.state != State.Stopped:
-            self.player.stop()
-            if self.config.general.send_channel_messages:
-                self.ttclient.send_message(
-                    self.translator.translate("{nickname} stopped playback").format(
-                        nickname=user.nickname
-                    ),
-                    type=2,
-                )
+            fade = (
+                self.config.player.fade_out_duration
+                if self.config.player.fade_out_on_stop
+                else 0.0
+            )
+
+            def announce() -> None:
+                if self.config.general.send_channel_messages:
+                    self.ttclient.send_message(
+                        self.translator.translate(
+                            "{nickname} stopped playback"
+                        ).format(nickname=user.nickname),
+                        type=2,
+                    )
+
+            if fade > 0:
+                # The fade takes a few seconds: say so right away.
+                announce()
+                self.player.stop(fade)
+            else:
+                self.player.stop()
+                announce()
         else:
             return self.translator.translate("Nothing is playing")
 

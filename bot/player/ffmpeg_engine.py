@@ -49,6 +49,21 @@ SINK_LEAD_SECONDS = 0.12
 PREBUFFER_FRAMES = 10
 # Silence (stalled network) longer than this releases the sink.
 UNDERRUN_RELEASE_SECONDS = 1.0
+# A fade-out falls by a fixed number of dB, i.e. along a straight line on the dB
+# scale. Hearing is roughly logarithmic, so that sounds like an even, steady fade;
+# a straight ramp of the amplitude seems to drop early and then linger.
+FADE_RANGE_DB = 48.0
+# A fade waits this much longer than its own length before giving up (a paused
+# stream sends no audio, so the fade would never advance).
+FADE_WAIT_MARGIN_SECONDS = 2.0
+
+# How a fade-out ended (see FFmpegEngine.fade_out_and_stop).
+FADE_DONE = "done"  # reached silence and the stream was stopped
+FADE_TIMEOUT = "timeout"  # did not finish in time (e.g. paused); stream stopped
+FADE_ENDED = "ended"  # the track finished by itself during the fade
+FADE_STOPPED = "stopped"  # somebody else stopped the engine during the fade
+FADE_SUPERSEDED = "superseded"  # new playback (play / seek / speed) took over
+FADE_IDLE = "idle"  # nothing audible to fade: no stream, or it was paused
 
 END_EOF = "eof"
 END_ERROR = "error"
@@ -192,6 +207,33 @@ class _Session:
         return self.start_offset + self.sent_frames * FRAME_SECONDS * self.speed
 
 
+class _Fade:
+    """A fade-out in progress. The pump advances it by one frame at a time."""
+
+    def __init__(self, session_id: int, frames: int) -> None:
+        self.session_id = session_id
+        self.total = max(int(frames), 1)
+        self.sent = 0
+        self.outcome: Optional[str] = None
+        self.done = threading.Event()
+        self._lock = threading.Lock()
+
+    def finish(self, outcome: str) -> None:
+        """Record how the fade ended (the first outcome wins) and wake waiters."""
+        with self._lock:
+            if self.outcome is None:
+                self.outcome = outcome
+        self.done.set()
+
+    def next_multiplier(self) -> float:
+        """Gain factor for the next frame: close to 1.0 first, 0.0 at the end."""
+        self.sent += 1
+        if self.sent >= self.total:
+            self.finish(FADE_DONE)
+            return 0.0
+        return 10.0 ** (-FADE_RANGE_DB * self.sent / self.total / 20.0)
+
+
 class FFmpegEngine:
     def __init__(
         self,
@@ -231,6 +273,7 @@ class FFmpegEngine:
         self._sink_exceptions = 0
         self._closed = False
         self._last_position = 0.0
+        self._fade: Optional[_Fade] = None
 
     # ------------------------------------------------------------------ state
 
@@ -318,10 +361,55 @@ class FFmpegEngine:
             with self._lock:
                 session, self._session = self._session, None
             self._request = None
+            self._cancel_fade(FADE_STOPPED)
             self._run_event.set()
             if session:
                 self._kill(session)
             self._close_sink()
+
+    def fade_out_and_stop(self, duration: float) -> str:
+        """Fade the stream to silence over ``duration`` seconds, then stop it.
+
+        Blocks the calling thread for the length of the fade; other threads stay
+        free to act (a new ``play`` or a ``stop`` ends the fade at once). The
+        volume setting is not touched: the fade is a separate gain factor that is
+        dropped together with the stream. Returns one of the ``FADE_*`` outcomes.
+        The stream is stopped here for ``FADE_DONE`` and ``FADE_TIMEOUT``; for
+        ``FADE_SUPERSEDED`` a newer stream owns the engine and is left alone.
+        """
+        with self._op_lock:
+            with self._lock:
+                session = self._session
+            if (
+                session is None
+                or self._closed
+                or duration <= 0
+                or not self._run_event.is_set()
+            ):
+                return FADE_IDLE
+            fade = _Fade(session.id, int(duration / FRAME_SECONDS))
+            previous, self._fade = self._fade, fade
+        if previous is not None:
+            previous.finish(FADE_SUPERSEDED)
+        fade.done.wait(duration + FADE_WAIT_MARGIN_SECONDS)
+        outcome = fade.outcome or FADE_TIMEOUT
+        if outcome in (FADE_DONE, FADE_TIMEOUT):
+            # Stop only if nothing replaced this fade since it finished, so a
+            # track started in that instant is never cut off.
+            with self._op_lock:
+                if self._fade is fade:
+                    self.stop()
+                else:
+                    with self._lock:
+                        outcome = (
+                            FADE_SUPERSEDED if self._session is not None else FADE_STOPPED
+                        )
+        return outcome
+
+    def _cancel_fade(self, outcome: str) -> None:
+        fade, self._fade = self._fade, None
+        if fade is not None:
+            fade.finish(outcome)
 
     def close(self) -> None:
         self._closed = True
@@ -417,6 +505,7 @@ class FFmpegEngine:
         request = self._request
         if request is None:
             return
+        self._cancel_fade(FADE_SUPERSEDED)
         with self._lock:
             old, self._session = self._session, None
         if old:
@@ -644,6 +733,9 @@ class FFmpegEngine:
                 base, sent_since_base = now, 0
             sent_since_base += 1
             target = volume_to_gain(self._volume, self._volume_curve)
+            fade = self._fade
+            if fade is not None and fade.session_id == session.id:
+                target *= fade.next_multiplier()
             frame = apply_gain(frame, self._last_gain, target)
             self._last_gain = target
             if session.cancelled.is_set():
@@ -663,6 +755,7 @@ class FFmpegEngine:
                 return
             self._last_position = session.position
             self._session = None
+        self._cancel_fade(FADE_ENDED)
         self._close_sink()
         reason = END_EOF if session.returncode == 0 else END_ERROR
         error = ""

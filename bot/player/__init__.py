@@ -8,7 +8,12 @@ import random
 
 from bot import errors, ffmpeg_locator
 from bot.player.enums import Mode, State, TrackType
-from bot.player.ffmpeg_engine import AudioSink, END_ERROR, FFmpegEngine
+from bot.player.ffmpeg_engine import (
+    AudioSink,
+    END_ERROR,
+    FADE_SUPERSEDED,
+    FFmpegEngine,
+)
 from bot.player.track import Track
 from bot.player.queue_manager import QueueManager
 
@@ -63,6 +68,9 @@ class Player:
         )
         self._engine.volume = self.config.default_volume
         self._refresh_in_progress = False
+        # True while stop() is fading the volume out. A second stop() then cuts
+        # the fade short, and a track that ends meanwhile does not start the next.
+        self._fading_out = False
         self.track_list: List[Track] = []
         self.track: Track = Track()
         self.track_index: int = -1
@@ -127,7 +135,23 @@ class Player:
         self.state = State.Paused
         self._engine.pause()
 
-    def stop(self) -> None:
+    def stop(self, fade: float = 0.0) -> None:
+        """Stop playback.
+
+        With ``fade`` > 0 and a track playing, the volume first falls to silence
+        over that many seconds (the volume setting itself is not changed). A
+        second ``stop`` during the fade stops at once, and starting other
+        playback during the fade cancels the stop.
+        """
+        if fade > 0 and not self._fading_out and self.state == State.Playing:
+            self._fading_out = True
+            try:
+                self._cancel_prefetch()
+                outcome = self._engine.fade_out_and_stop(fade)
+            finally:
+                self._fading_out = False
+            if outcome == FADE_SUPERSEDED:
+                return
         self._cancel_prefetch()
         self.state = State.Stopped
         self._engine.stop()
@@ -636,7 +660,7 @@ class Player:
                     "[PlaybackTiming] youtube_stream_refresh_failed "
                     f"track={self.track.name!r} error={refresh_error!r}"
                 )
-        if self.state == State.Playing and self._engine.idle:
+        if self.state == State.Playing and self._engine.idle and not self._fading_out:
             if self.mode == Mode.SingleTrack or self.track.type == TrackType.Direct:
                 # Mesmo em SingleTrack/Direct, a fila tem prioridade
                 if not self.queue.is_empty:

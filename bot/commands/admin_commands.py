@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 import os
 import subprocess
 import sys
@@ -9,6 +10,7 @@ from queue import Empty
 from bot.commands.command import Command
 from bot.player.enums import State
 from bot import app_vars, errors
+from bot.updater import UpdateError
 
 if TYPE_CHECKING:
     from bot.TeamTalk.structs import User
@@ -121,6 +123,9 @@ class ClearCacheCommand(Command):
 
 
 class JoinChannelCommand(Command):
+    # Seconds to wait for the server to confirm that the bot joined.
+    JOIN_TIMEOUT = 10
+
     @property
     def help(self) -> str:
         return self.translator.translate(
@@ -144,26 +149,35 @@ class JoinChannelCommand(Command):
             cmd = self.ttclient.join_channel(channel, password)
         except ValueError:
             return self.translator.translate("This channel does not exist")
-        while True:
+        # Wait for the server to answer, but never forever: the old loop had no
+        # exit, so a lost confirmation left this command thread spinning and the
+        # user without any reply.
+        deadline = time.monotonic() + self.JOIN_TIMEOUT
+        while time.monotonic() < deadline:
             try:
                 event = self.ttclient.event_success_queue.get_nowait()
                 if event.source == cmd:
-                    break
-                else:
-                    self.ttclient.event_success_queue.put(event)
+                    return self.translator.translate("Joined the channel")
+                self.ttclient.event_success_queue.put(event)
             except Empty:
                 pass
             try:
                 error = self.ttclient.errors_queue.get_nowait()
                 if error.command_id == cmd:
                     return self.translator.translate(
-                        "Error joining channel: {error}".format(error=error.message)
-                    )
-                else:
-                    self.ttclient.errors_queue.put(error)
+                        "Error joining channel: {error}"
+                    ).format(error=error.message)
+                self.ttclient.errors_queue.put(error)
             except Empty:
                 pass
             time.sleep(app_vars.loop_timeout)
+        logging.warning(
+            f"JoinChannelCommand: no server confirmation for command id {cmd} "
+            f"within {self.JOIN_TIMEOUT}s (channel={channel!r})"
+        )
+        return self.translator.translate(
+            "No confirmation from the server, the bot may not have joined the channel"
+        )
 
 
 """ class TaskSchedulerCommand(Command):
@@ -377,6 +391,101 @@ class RestartCommand(Command):
         else:
             args.insert(0, sys.executable)
             os.execv(sys.executable, args)
+
+
+class FadeOutCommand(Command):
+    MIN_SECONDS = 0.5
+    MAX_SECONDS = 15.0
+
+    @property
+    def help(self) -> str:
+        return self.translator.translate(
+            "[on/off/SECONDS] Turns the fade-out when stopping playback on or off. A number of seconds sets its length and turns it on. Without an option it switches between on and off"
+        )
+
+    def __call__(self, arg: str, user: User) -> Optional[str]:
+        player_config = self.config.player
+        arg = arg.strip().lower()
+        if not arg:
+            player_config.fade_out_on_stop = not player_config.fade_out_on_stop
+        elif arg == "on":
+            player_config.fade_out_on_stop = True
+        elif arg == "off":
+            player_config.fade_out_on_stop = False
+        else:
+            try:
+                seconds = float(arg.replace(",", "."))
+            except ValueError:
+                raise errors.InvalidArgumentError()
+            if not self.MIN_SECONDS <= seconds <= self.MAX_SECONDS:
+                raise errors.InvalidArgumentError()
+            player_config.fade_out_duration = seconds
+            player_config.fade_out_on_stop = True  # a length only matters when on
+        if not player_config.fade_out_on_stop:
+            return self.translator.translate("Fade-out on stop is disabled")
+        return self.translator.translate(
+            "Fade-out on stop is enabled ({seconds} seconds)"
+        ).format(seconds="{:g}".format(player_config.fade_out_duration))
+
+
+class InstallUpdateCommand(Command):
+    @property
+    def help(self) -> str:
+        return self.translator.translate(
+            "Installs the latest update from GitHub, then restarts the bot"
+        )
+
+    def __call__(self, arg: str, user: User) -> Optional[str]:
+        checker = self._bot.update_checker
+        if not checker.install_lock.acquire(blocking=False):
+            return self.translator.translate("An update is already being installed")
+        try:
+            message = self._install(checker, user)
+        finally:
+            checker.install_lock.release()
+        if message is not None:
+            return message
+        # Installed: leave a note for the next start, say goodbye and restart.
+        marker = os.path.join(self._bot.config_manager.config_dir, "update_success")
+        try:
+            with open(marker, "w", encoding="utf-8") as marker_file:
+                marker_file.write("ok")
+        except OSError as error:
+            logging.warning(f"Could not write the update marker file: {error}")
+        self._bot.is_updating = True
+        RestartCommand(self.command_processor)("", user)
+        return None
+
+    def _install(self, checker, user: User) -> Optional[str]:
+        """Returns a message for the user, or None when the bot should restart."""
+        translate = self.translator.translate
+        try:
+            info = checker.check()
+        except UpdateError as error:
+            return translate("Unable to check for updates: {error}").format(error=error)
+        if info is None:
+            return translate("TTMediaBot is up to date (version {version}).").format(
+                version=app_vars.app_version
+            )
+        self.ttclient.send_message(
+            translate("Installing the update. This takes a moment."), user
+        )
+        try:
+            checker.install(info)
+        except UpdateError as error:
+            return translate("The update could not be installed: {error}").format(
+                error=error
+            )
+        if info.requirements_changed:
+            # Restarting into missing packages would leave the bot offline.
+            return translate(
+                "The update was installed, but it changes the required Python packages. Run pip install -r requirements.txt on the bot's computer, then send rs to restart the bot."
+            )
+        self.ttclient.send_message(
+            translate("Update installed. Restarting now to apply it."), user
+        )
+        time.sleep(0.5)
+        return None
 
 
 class GetChannelIDCommand(Command):

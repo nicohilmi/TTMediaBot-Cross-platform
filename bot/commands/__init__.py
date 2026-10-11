@@ -100,6 +100,8 @@ class CommandProcessor:
             "rs": admin_commands.RestartCommand,
             "q": admin_commands.QuitCommand,
             "gcid": admin_commands.GetChannelIDCommand,
+            "fo": admin_commands.FadeOutCommand,
+            "install": admin_commands.InstallUpdateCommand,
         }
 
     def run(self):
@@ -150,8 +152,17 @@ class CommandProcessor:
                 message.user,
             )
         except errors.AccessDeniedError as e:
+            if str(e):
+                logging.info(
+                    f"Command '{command_name}' from user {message.user.username} "
+                    f"was refused: {e}"
+                )
             self.ttclient.send_message(str(e), message.user)
         except (errors.ParseCommandError, errors.UnknownCommandError):
+            logging.info(
+                f"Unknown command in message {message.text!r} "
+                f"from user {message.user.username}"
+            )
             self.ttclient.send_message(
                 self.translator.translate('Unknown command. Send "h" for help.'),
                 message.user,

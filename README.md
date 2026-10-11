@@ -207,7 +207,7 @@ Send these commands to the bot via private message (PM) or in the channel (if en
 | **h** | | Shows command help. |
 | **p** | `[query]` | Plays tracks found for query. If no query, pauses/resumes. |
 | **u** | `[url]` | Plays a stream/file from a direct URL. |
-| **s** | | Stops playback. |
+| **s** | | Stops playback. The volume fades out first (see `fo`). |
 | **n** | `[number/?]` | Plays the next track, jumps to a positive or negative track index, or reports the current position with `?`. |
 | **b** | | Plays the previous track. |
 | **v** | `[0-100]` | Sets volume. No arg shows current volume. |
@@ -263,6 +263,8 @@ Send these commands to the bot via private message (PM) or in the channel (if en
 | **rs** | | Restarts the bot. |
 | **q** | | Quits the bot. |
 | **gcid** | | Gets the current channel ID. |
+| **fo** | `[on/off/seconds]` | Turns the fade-out of `s` on or off (no option switches it), or sets its length in seconds. |
+| **install** | | Installs the latest update from GitHub (`git pull`), then restarts the bot. |
 
 ---
 

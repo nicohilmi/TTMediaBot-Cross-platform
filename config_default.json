@@ -18,7 +18,9 @@
         "ffmpeg_path": "",
         "buffer_seconds": 5.0,
         "network_timeout": 30.0,
-        "volume_curve": "cubic"
+        "volume_curve": "cubic",
+        "fade_out_on_stop": true,
+        "fade_out_duration": 3.0
     },
     "teamtalk": {
         "hostname": "localhost",
@@ -72,5 +74,10 @@
         "shorten_links": false,
         "service": "clckru",
         "service_params": {}
+    },
+    "updater": {
+        "enabled": true,
+        "check_interval_minutes": 60,
+        "remote": "origin"
     }
 }

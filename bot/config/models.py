@@ -29,6 +29,10 @@ class PlayerModel(BaseModel):
     # "cubic" matches the loudness curve of the former mpv player, "linear" is a
     # plain percentage.
     volume_curve: str = "cubic"
+    # Stopping with "s" first lowers the volume to silence, then stops. Admins
+    # switch it on and off, or set its length, with the "fo" command.
+    fade_out_on_stop: bool = True
+    fade_out_duration: float = 3.0
 
 class TeamTalkUserModel(BaseModel):
     admins: List[str] = ["admin"]
@@ -97,6 +101,16 @@ class ShorteningModel(BaseModel):
     service_params: Dict[str, Any] = {}
 
 
+class UpdaterModel(BaseModel):
+    # Looks on GitHub (the git remote of the bot folder) for new commits and tells
+    # the TeamTalk channel; an administrator then sends "install" to update.
+    enabled: bool = True
+    # How often GitHub is checked, in minutes (1 or more).
+    check_interval_minutes: int = 60
+    # The git remote to watch. The branch is always the one the bot folder is on.
+    remote: str = "origin"
+
+
 class ConfigModel(BaseModel):
     config_version: int = 0
     general: GeneralModel = GeneralModel()
@@ -105,3 +119,4 @@ class ConfigModel(BaseModel):
     services: ServicesModel = ServicesModel()
     logger: LoggerModel = LoggerModel()
     shortening: ShorteningModel = ShorteningModel()
+    updater: UpdaterModel = UpdaterModel()
