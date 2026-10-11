@@ -831,3 +831,20 @@ All notable updates to this fork are documented here, in reverse chronological o
 
 ### 📁 Files Changed
 - `README_WINDOWS.md` (new), `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — "Trial expired" Window Closes Itself *(10/11/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### ✨ Added: Automatic OK for the TeamTalk SDK Trial Message Box
+- **🔎 Why:** the trial build of `TeamTalk5.dll` shows a modal Windows message box titled "Trial expired" and blocks the bot until OK is pressed, so every start and every `rs` restart needed a manual click.
+- **🖱️ How:** the new `bot/tt_trial_dialog.py` starts a small background thread at the very top of `bot/__init__.py` (before `TeamTalk5.dll` is loaded). It looks for a message box with that title **that belongs to the bot's own process** and presses its OK button, just like a user would; if the box is still open after a few tries it is closed instead. Boxes of other programs or of other bots are never touched.
+- **📌 Unchanged:** the SDK is not patched and its trial/licence state is not changed. Each bot process starts its own watcher, so `rs` (which starts a fresh process on Windows) is covered too.
+- **🪟 Platforms:** active on Windows only; on Linux it does nothing.
+- **⚙️ Switch off:** set the environment variable `TTMEDIABOT_KEEP_SDK_DIALOG=1` to keep the message box.
+- **📝 Log:** one `INFO` line, "TeamTalk SDK 'Trial expired' window closed automatically", is written when it fires.
+
+### 📁 Files Changed
+- `bot/tt_trial_dialog.py` (new), `bot/__init__.py`, `CHANGELOG.md`.

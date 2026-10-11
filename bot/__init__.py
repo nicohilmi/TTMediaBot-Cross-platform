@@ -12,6 +12,12 @@ from bot.logger import install_bootstrap_logging
 
 install_bootstrap_logging()
 
+# Must run before bot.TeamTalk is imported (that loads TeamTalk5.dll): closes the SDK
+# trial "Trial expired" message box automatically on Windows.
+from bot import tt_trial_dialog
+
+tt_trial_dialog.start()
+
 from bot.TeamTalk.structs import Message, MessageType, User, UserType, UserStatusMode, UserState
 from bot import errors
 
