@@ -16,13 +16,14 @@ A feature-rich media streaming bot for TeamTalk 5, capable of playing music from
 This fork includes several modifications and optimizations:
 
 - **Removed Services:** Yandex Music and VK integration have been removed
-- **TeamTalk SDK Upgrade:** Updated to TeamTalk SDK 5.8.1 for improved performance
+- **TeamTalk SDK Upgrade:** Targets TeamTalk SDK 5.23a (released 8 April 2026, the newest stable release on the official BearWare page). `install_windows.bat` and `install.sh` run `tools/setup_deps.py`, which downloads the newest stable SDK by itself and tells you what to do by hand if it cannot
 - **YouTube.js Bridge Architecture:** Replaced `yt-dlp` and `py-yt-search` with a persistent `YouTube.js` (`youtubei.js`) bridge, removing repeated command-line extraction from the playback path.
 - **Shared Multi-Bot Backend:** All bot containers now use one managed YouTube service containing the bridge and PO-token provider. Per-bot cookies remain isolated, while sessions, resolved streams, and in-flight requests are efficiently reused.
 - **ARM64 Architecture Support:** Added native support for ARM64 architecture (such as Raspberry Pi and AWS Graviton servers) with automatic platform detection and library downloads during installation.
   > [!NOTE]
   > On `x86_64` systems, the installation remains untouched and minimal. On `ARM` systems, the installer and Dockerfile conditionally install additional dependencies (such as `libportaudio2`) required by the ARM version of the TeamTalk SDK to run.
 - **Universal Linux Distribution Support:** The installer (`ttbotdocker.sh` / `install_git_clone.sh`) now dynamically supports automatically setting up Docker, `ffmpeg`, and dependencies on any major distribution (Ubuntu, Debian, CentOS, RHEL, Fedora, Rocky Linux, AlmaLinux, Raspbian, Arch, etc.) using the official universal installer and dynamic package manager fallbacks for `jq`.
+- **Python 3.15:** The bot is optimized for Python 3.15 (released 9 October 2026) and still runs on Python 3.10 or newer. `install_windows.bat` installs Python 3.15 through winget when no suitable Python is found.
 - **Docker Containerization:** The bot runs in Docker containers based on Debian 11 and Python 3.10, ensuring compatibility with legacy dependencies while maintaining stability
 - **Proven Stability:** Since I first encountered this bot in 2021, the adaptations made to work around YouTube's restrictions, combined with the optimizations from 2021/2022, have proven to be excellent and reliable
 
@@ -136,11 +137,11 @@ The bot no longer uses `mpv`/`libmpv` or PulseAudio. **FFmpeg** decodes every fi
 
 ### Windows
 
-1. Install **64-bit Python 3.9+** (tick *Add python.exe to PATH*).
-2. Get FFmpeg: `winget install ffmpeg`, or download a build from <https://www.gyan.dev/ffmpeg/builds/> / <https://github.com/BtbN/FFmpeg-Builds> and copy `ffmpeg.exe` next to `TTMediaBot.py`.
-3. Copy the **64-bit TeamTalk 5 SDK** `TeamTalk5.dll` next to `TTMediaBot.py` (SDK 5.11 or newer is required for the virtual sound device).
+1. **64-bit Python 3.15** is recommended (3.10 or newer still works). `install_windows.bat` installs it for you when no suitable Python is found: it runs `winget install 9NQ7512CXL7T --accept-package-agreements` (the Python install manager) and then `py install 3.15`. By hand, run those two commands in a terminal.
+2. FFmpeg: `install_windows.bat` checks for it and installs it with winget (`winget install --id Gyan.FFmpeg -e`), Chocolatey or Scoop when it is missing. By hand: use one of those, or download a build from <https://www.gyan.dev/ffmpeg/builds/> / <https://github.com/BtbN/FFmpeg-Builds> and copy `ffmpeg.exe` next to `TTMediaBot.py`.
+3. TeamTalk SDK: `install_windows.bat` downloads the newest stable 64-bit SDK from <https://bearware.dk/?page_id=419> and puts `TeamTalk5.dll` next to `TTMediaBot.py`. SDK 5.11 or newer is required for the virtual sound device. To redo only this step: `venv\Scripts\python.exe tools\setup_deps.py all` (add `--force` to fetch the SDK again, `--check` to only report). The SDK (a `.7z` archive) is unpacked in the Windows `Temp` folder and deleted afterwards; 7-Zip is installed through winget, or a portable `7zr.exe` is downloaded, when nothing on the computer can open it. Browser identities for the downloads are in `tools\user_agents.txt`. BearWare distributes the SDK download as a 30 day trial.
 4. For YouTube / YouTube Music install **Node.js LTS** and **Git** (`winget install OpenJS.NodeJS.LTS`, `winget install Git.Git`).
-5. Run `install_windows.bat` (creates `venv`, installs the requirements and the YouTube bridge), edit `config.json`, then start the bot with `TTMediaBot.bat`.
+5. Run `install_windows.bat` (creates `venv`, installs the requirements and the YouTube bridge), edit `config.json`, then start the bot with `TTMediaBot.bat`. Step 4 of the installer (the PO-token provider) asks whether to install it: one provider on port `4416` serves every bot on the computer, so answer **N** when another bot already has it (steps 4 and 5 are then skipped). `install_windows.bat --no-pot` / `--pot` answer for you.
 
 ### Linux (without Docker)
 
@@ -197,6 +198,54 @@ If you need to manually edit bot configurations after setup:
 
 ---
 
+## 🤖 AI (Gemini)
+
+The bot can answer questions with Google's Gemini models, through the official `google-genai` library. Answers can use **Grounding with Google Search**, so questions about the weather, the news or a match get current information instead of old knowledge.
+
+### Turn it on
+
+1. Create an API key at <https://aistudio.google.com/apikey>.
+2. Put it in `config.json` under `ai` → `gemini` → `api_key`. (Or leave it empty and set the `GEMINI_API_KEY` environment variable.)
+3. Install the packages (`install_windows.bat` or `install.sh` does it, and so does rebuilding the Docker image) and restart the bot with `rs`. The `google-genai` library is part of `requirements.txt` and needs Python 3.10 or newer.
+
+### Using it
+
+| Command | What it does |
+| :--- | :--- |
+| `ai QUESTION` | Asks one question, for example `ai bagaimana cuaca di blora saat ini`. Nothing is remembered afterwards. |
+| `chat` | Starts a conversation. From then on **everything you send is a message to the AI**, and the AI remembers what was said. Commands inside a chat: `/clear` forgets the conversation and starts a new topic, `/c` ends the chat. `chat QUESTION` starts a chat and asks at once. |
+
+The answers are plain text (no Markdown symbols), are cut at `max_answer_length` characters and are sent as several messages when they are long. When the answer was found with Google Search, the names of the websites are added at the end.
+
+### Settings (`config.json` → `ai`)
+
+| Setting | Default | Meaning |
+| :--- | :--- | :--- |
+| `enabled` | `true` | Turns the `ai` and `chat` commands on or off. An administrator can also block one with `bc +ai`. |
+| `provider` | `"gemini"` | The service that answers. Only Gemini exists for now. |
+| `cooldown_seconds` | `2.0` | Seconds a user has to wait between two questions. |
+| `max_question_length` | `2000` | Longest question in characters (`0` = no limit). |
+| `max_answer_length` | `1500` | Longest answer in characters (`0` = no limit). |
+| `show_sources` | `true` | Names the websites a searched answer is based on. |
+| `chat_idle_minutes` | `30` | A chat ends by itself after this many minutes without a message (`0` = never). |
+| `max_concurrent_requests` | `3` | Questions answered at the same time, for all users together. |
+| `gemini.api_key` | `""` | Your key. Empty uses `GEMINI_API_KEY` or `GOOGLE_API_KEY`. |
+| `gemini.model` | `"gemini-3.8-flash"` | The model. Google renames and retires models now and then; the current names are at <https://ai.google.dev/gemini-api/docs/models>. |
+| `gemini.google_search` | `true` | Grounding with Google Search. |
+| `gemini.thinking_level` | `"low"` | `"low"` (fastest), `"medium"` or `"high"`; empty uses the model's default. |
+| `gemini.timeout_seconds` | `60` | Seconds to wait for Google before one request is given up. |
+| `gemini.max_retries` | `2` | How often a request is repeated when Google is busy or the network fails. |
+| `gemini.system_instruction` | `""` | Extra instructions for every answer. Empty uses the built-in ones. |
+
+Things to know:
+
+- A single question is sent without being stored. A chat is kept by Google, as part of the Interactions API, so that the bot only has to send the newest message; `/clear` and `/c` forget it on the bot's side, and Google deletes it after its own retention time.
+- Google's free tier has limits, and a key with billing turned on is charged by Google. When a limit is reached the bot says so.
+- Questions and answers go through Google. Do not enable the AI on a server where that is not acceptable.
+- Google has terms for Grounding with Google Search, including how its "Search Suggestions" are shown. A text bot cannot show that widget, so read the terms before you use it publicly.
+
+---
+
 ## 🎮 Commands
 
 Send these commands to the bot via private message (PM) or in the channel (if enabled).
@@ -239,6 +288,8 @@ Send these commands to the bot via private message (PM) or in the channel (if en
 | **sr** | `[on/off]` | Toggles Search Results Mode. When active, `p QUERY` shows a numbered list instead of playing immediately. Save with `sc`. |
 | **sl** | `[number]` | Selects and plays result NUMBER from the last `sr` search list. |
 | **slc** | `[number]` | Sets how many results are shown in `sr` mode. The volatile count defaults to 1 after every restart; no argument shows the current count. |
+| **ai** | `question` | Asks the AI (Gemini). It searches Google when the answer needs current information, such as the weather. |
+| **chat** | `[question]` | Starts a conversation with the AI. Inside a chat everything you send goes to the AI; `/clear` starts a new topic and `/c` ends the chat. |
 | **a** | | Shows about info. |
 
 ### Admin Commands
@@ -785,6 +836,17 @@ grep '\[PlaybackTiming\]' bots/[bot_name]/TTMediaBot.log
 ```
 
 Bridge-side cache hits, misses, pending-resolution joins, selected clients, and resolution time are written to `docker logs ttmediabot-youtube`. Comparing both logs separates TeamTalk command latency, queue pressure, YouTube resolution time, and `mpv` startup time.
+
+---
+
+## 🧪 Tests
+
+All Python tests are in the `tests` folder (the Node.js tests of the YouTube bridge stay in `youtube_bridge/test`). From the bot folder:
+
+```bash
+python -m unittest discover -s tests -t . -v      # everything
+python -m unittest tests.test_ai_manager -v       # one file
+```
 
 ---
 

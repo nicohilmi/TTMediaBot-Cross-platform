@@ -9,8 +9,8 @@ from queue import Empty
 
 from bot.commands.command import Command
 from bot.player.enums import State
-from bot import app_vars, errors
-from bot.updater import UpdateError
+from bot import app_vars, errors, update_state
+from bot.updater import UpdateError, short_sha
 
 if TYPE_CHECKING:
     from bot.TeamTalk.structs import User
@@ -446,15 +446,17 @@ class InstallUpdateCommand(Command):
         if message is not None:
             return message
         # Installed: leave a note for the next start, say goodbye and restart.
-        marker = os.path.join(self._bot.config_manager.config_dir, "update_success")
         try:
-            with open(marker, "w", encoding="utf-8") as marker_file:
-                marker_file.write("ok")
+            update_state.write_success_marker(
+                self._bot.config_manager.config_dir, *self._installed
+            )
         except OSError as error:
             logging.warning(f"Could not write the update marker file: {error}")
         self._bot.is_updating = True
         RestartCommand(self.command_processor)("", user)
         return None
+
+    _installed = ("", "")
 
     def _install(self, checker, user: User) -> Optional[str]:
         """Returns a message for the user, or None when the bot should restart."""
@@ -471,16 +473,31 @@ class InstallUpdateCommand(Command):
             translate("Installing the update. This takes a moment."), user
         )
         try:
-            checker.install(info)
+            new_sha = checker.install(info)
         except UpdateError as error:
             return translate("The update could not be installed: {error}").format(
                 error=error
             )
+        self._installed = (short_sha(info.local_sha), short_sha(new_sha))
         if info.requirements_changed:
-            # Restarting into missing packages would leave the bot offline.
-            return translate(
-                "The update was installed, but it changes the required Python packages. Run pip install -r requirements.txt on the bot's computer, then send rs to restart the bot."
+            # The packages cannot be replaced while the bot is using them. They are
+            # installed during the restart, before the bot loads them (see
+            # tools/apply_update.py), the way an OS finishes an update on reboot.
+            try:
+                update_state.request_requirements_install()
+            except OSError as error:
+                logging.warning(f"Could not ask for the package installation: {error}")
+                return translate(
+                    "The update was installed, but it changes the required Python packages. Run pip install -r requirements.txt on the bot's computer, then send rs to restart the bot."
+                )
+            self.ttclient.send_message(
+                translate(
+                    "Update installed. The bot restarts now and installs the required Python packages while it starts."
+                ),
+                user,
             )
+            time.sleep(0.5)
+            return None
         self.ttclient.send_message(
             translate("Update installed. Restarting now to apply it."), user
         )

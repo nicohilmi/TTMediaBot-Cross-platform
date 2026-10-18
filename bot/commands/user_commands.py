@@ -5,6 +5,7 @@ import tempfile
 import zipfile
 from typing import List, Optional, TYPE_CHECKING
 
+from bot.ai import AIError, shorten, to_plain_text
 from bot.commands.command import Command
 from bot.player.enums import Mode, State, TrackType
 from bot.TeamTalk.structs import User, UserRight
@@ -1470,3 +1471,149 @@ class ToggleLocalDownloadCommand(Command):
         else:
             return self.translator.translate("Local download mode (adsc) disabled.")
 
+
+
+def ai_error_text(translate, error: AIError, model: str = "") -> str:
+    """The message people get when the AI could not answer."""
+    kind = error.kind
+    if kind == "disabled":
+        return translate("The AI is turned off")
+    if kind == "not_configured":
+        return translate(
+            "The AI is not set up yet. An administrator needs to add a Gemini API key to config.json (ai.gemini.api_key)"
+        )
+    if kind == "sdk_missing":
+        return translate(
+            "The AI needs the google-genai package. An administrator can install it with: pip install -r requirements.txt"
+        )
+    if kind == "unknown_provider":
+        return translate(
+            "The AI service set in config.json (ai.provider) does not exist"
+        )
+    if kind == "too_long":
+        return translate("Your question is too long. The limit is {limit} characters").format(
+            limit=error.detail
+        )
+    if kind == "cooldown":
+        return translate("Please wait {seconds} seconds before asking again").format(
+            seconds=max(int(error.retry_after + 0.999), 1)
+        )
+    if kind == "user_busy":
+        return translate("Your previous question is still being answered")
+    if kind == "busy_global":
+        return translate("The AI is busy right now. Please try again in a moment")
+    if kind == "auth":
+        return translate(
+            "Google did not accept the API key. An administrator needs to check ai.gemini.api_key"
+        )
+    if kind == "region":
+        return translate("The Gemini API is not available in the country of the bot")
+    if kind == "quota":
+        return translate("The usage limit of the AI was reached. Please try again later")
+    if kind in ("server", "unavailable"):
+        return translate("The AI service is not available right now. Please try again later")
+    if kind == "timeout":
+        return translate("The AI took too long to answer. Please try again")
+    if kind == "network":
+        return translate("The bot cannot reach the AI service. Please try again later")
+    if kind == "model":
+        return translate(
+            "The AI model {model} is not available. An administrator needs to check ai.gemini.model"
+        ).format(model=model)
+    if kind == "empty":
+        return translate("The AI did not give an answer. Try asking in another way")
+    return translate("The AI could not answer: {reason}").format(
+        reason=error.detail or error.kind
+    )
+
+
+class _AIBase(Command):
+    """What the commands that talk to the AI have in common."""
+
+    def ask_ai(self, question: str, user: User, chat: bool) -> Optional[str]:
+        manager = self._bot.ai_manager
+        translate = self.translator.translate
+        try:
+            answer = manager.ask(
+                user,
+                question,
+                chat=chat,
+                on_start=lambda: self.send_message_async(
+                    translate("AI is thinking..."), user
+                ),
+            )
+        except AIError as error:
+            if error.kind == "empty_question":
+                raise errors.InvalidArgumentError()
+            return ai_error_text(translate, error, manager.config.gemini.model)
+        config = manager.config
+        lines = []
+        if answer.conversation_reset:
+            lines.append(
+                translate(
+                    "The previous conversation was no longer available, so a new one was started."
+                )
+            )
+        lines.append(shorten(to_plain_text(answer.text), int(config.max_answer_length)))
+        if config.show_sources and answer.sources:
+            lines.append(
+                translate("Sources: {sources}").format(
+                    sources=", ".join(title for title, _ in answer.sources[:3])
+                )
+            )
+        return "\n".join(lines)
+
+    def welcome(self) -> str:
+        return self.translator.translate(
+            "Welcome to {name} chat! You can start talking to the AI.\nCommands:\n/clear - Forget the current conversation and start a new topic.\n/c - End the chat session."
+        ).format(name=self._bot.ai_manager.provider_title())
+
+
+class AICommand(_AIBase):
+    @property
+    def help(self) -> str:
+        return self.translator.translate(
+            "QUESTION Asks the AI. It searches Google when the answer needs current information, such as the weather or the news. Send chat to hold a conversation instead"
+        )
+
+    def __call__(self, arg: str, user: User) -> Optional[str]:
+        return self.ask_ai(arg, user, chat=False)
+
+
+class ChatCommand(_AIBase):
+    @property
+    def help(self) -> str:
+        return self.translator.translate(
+            "Starts a conversation with the AI. Everything you send is then a message to the AI, until you send /c. /clear starts a new topic"
+        )
+
+    def __call__(self, arg: str, user: User) -> Optional[str]:
+        manager = self._bot.ai_manager
+        translate = self.translator.translate
+        try:
+            manager.check_ready()
+        except AIError as error:
+            return ai_error_text(translate, error, manager.config.gemini.model)
+        manager.start_chat(user)
+        if arg.strip():
+            return self.ask_ai(arg, user, chat=True)
+        return self.welcome()
+
+
+class AIChatMessageCommand(_AIBase):
+    """A message from someone who is in a chat with the AI (not a listed command)."""
+
+    def __call__(self, arg: str, user: User) -> Optional[str]:
+        manager = self._bot.ai_manager
+        translate = self.translator.translate
+        text = arg.strip()
+        lowered = text.lower()
+        if lowered == "/c":
+            manager.end_chat(user)
+            return translate("Chat ended")
+        if lowered == "/clear":
+            manager.clear_chat(user)
+            return translate("Conversation cleared. You can start a new topic")
+        if lowered == "/chat":
+            return self.welcome()
+        return self.ask_ai(text, user, chat=True)

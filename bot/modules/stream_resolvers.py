@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+# Python 3.15 (PEP 810) loads BeautifulSoup only when a page has to be read; older
+# Python versions treat this line as a plain list and import it at once, as before.
+__lazy_modules__ = ["bs4"]
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import html

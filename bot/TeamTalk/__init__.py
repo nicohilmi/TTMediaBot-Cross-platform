@@ -39,39 +39,56 @@ def _str(data: AnyStr) -> AnyStr:
         return str(data, "utf-8")
 
 
+def _wrap(line: str, max_length: int) -> List[str]:
+    """Breaks one line that is too long: on spaces first, then inside a word."""
+    if len(line) <= max_length:
+        return [line]
+    pieces: List[str] = []
+    current = ""
+    for word in line.split(" "):
+        while len(word) > max_length:
+            # A word longer than a whole message (a long URL, for example).
+            if current:
+                pieces.append(current)
+                current = ""
+            pieces.append(word[:max_length])
+            word = word[max_length:]
+        if current and len(current) + 1 + len(word) <= max_length:
+            current += " " + word
+        elif current:
+            pieces.append(current)
+            current = word
+        else:
+            current = word
+    if current:
+        pieces.append(current)
+    return pieces
+
+
 def split(text: str, max_length: int = app_vars.max_message_length) -> List[str]:
+    """Cuts a text into messages of at most max_length characters.
+
+    Lines are kept together while they fit; a line that is longer than a message
+    is cut on its spaces. (The previous version dropped every word of such a
+    line and sent empty messages, which made long single-paragraph texts, such
+    as the answers of the AI, disappear.)
+    """
     if len(text) <= max_length:
-        lines = [text]
-    else:
-        lines = [""]
-        for line in text.split("\n"):
-            if len(line) <= max_length:
-                if len(lines[-1]) > 0 and len(lines[-1]) + len(line) + 1 <= max_length:
-                    lines[-1] += "\n" + line
-                elif len(lines) == 1 and len(lines[0]) == 0:
-                    lines[0] = line
-                else:
-                    lines.append(line)
+        return [text]
+    messages: List[str] = []
+    current = ""
+    for line in text.split("\n"):
+        for piece in _wrap(line, max_length):
+            if current and len(current) + 1 + len(piece) <= max_length:
+                current += "\n" + piece
+            elif current:
+                messages.append(current)
+                current = piece
             else:
-                words = [""]
-                for word in line.split(" "):
-                    if len(word) <= max_length:
-                        if (
-                            len(words[-1]) > 0
-                            and len(words[-1]) + len(word) + 1 <= max_length
-                        ):
-                            words[-1] += " " + word
-                        elif len(words) == 1 and len(words[0]) == 0:
-                            words[0] == word
-                        else:
-                            words.append(word)
-                    else:
-                        chunk = word
-                        for _ in range(0, int(len(chunk) / max_length) + 1):
-                            words.append(chunk[0:max_length])
-                            chunk = chunk[max_length::]
-                lines += words
-    return lines
+                current = piece
+    if current:
+        messages.append(current)
+    return messages
 
 
 class TeamTalk:
@@ -143,7 +160,7 @@ class TeamTalk:
                 try:
                     cert_pem = ssl.get_server_certificate((self.config.hostname, self.config.tcp_port))
                     temp_cert_file = os.path.join(tempfile.gettempdir(), f"tt_{self.config.hostname}_{self.config.tcp_port}.pem")
-                    with open(temp_cert_file, "w") as f:
+                    with open(temp_cert_file, "w", encoding="UTF-8") as f:
                         f.write(cert_pem)
                     ctx.szCAFile = _str(temp_cert_file)
                     ctx.bVerifyPeer = True

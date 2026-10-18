@@ -25,6 +25,7 @@ from pydantic import ValidationError
 
 from bot import (
     TeamTalk,
+    ai,
     cache,
     commands,
     config,
@@ -36,6 +37,7 @@ from bot import (
     services,
     sound_devices,
     translator,
+    update_state,
     updater,
     app_vars,
 )
@@ -91,6 +93,7 @@ class Bot:
         self.sound_device_manager = sound_devices.SoundDeviceManager(self)
         self.service_manager = services.ServiceManager(self)
         self.module_manager = modules.ModuleManager(self)
+        self.ai_manager = ai.AIManager(lambda: self.config.ai)
         self.command_processor = commands.CommandProcessor(self)
         self.update_checker = updater.UpdateChecker(self)
         
@@ -139,19 +142,8 @@ class Bot:
             message = Message(text=command, user=startup_context_user, channel=self.ttclient.channel, type=MessageType.User)
             self.command_processor(message)
         
-        # Check for update success file
-        success_file = os.path.join(self.config_manager.config_dir, "update_success")
-        if os.path.exists(success_file):
-            try:
-                time.sleep(2)
-                msg = self.translator.translate("Update completed successfully! I am back online.")
-                self.ttclient.send_message(msg, type=2)
-            except Exception as e:
-                logging.error(f"Error sending update success message: {e}")
-            try:
-                os.remove(success_file)
-            except Exception:
-                pass
+        # After an update: say what changed, like the screen an OS shows after one.
+        self._announce_update_result()
 
         # Periodic Pre-warming tracking
         self.last_pre_warm_time = time.time()
@@ -201,6 +193,36 @@ class Bot:
                     pass
 
             time.sleep(app_vars.loop_timeout)
+
+    def _announce_update_result(self) -> None:
+        success_file = update_state.success_path(self.config_manager.config_dir)
+        failure = update_state.take_requirements_failure(app_vars.directory)
+        if not os.path.exists(success_file) and failure is None:
+            return
+        translate = self.translator.translate
+        try:
+            time.sleep(2)
+            if os.path.exists(success_file):
+                info = update_state.read_success_marker(success_file)
+                self.ttclient.send_message(
+                    update_state.completion_message(
+                        translate, info, self.config_manager.migration
+                    ),
+                    type=2,
+                )
+            if failure is not None:
+                self.ttclient.send_message(
+                    translate(
+                        "The Python packages of the update could not be installed: {error}. Run pip install -r requirements.txt on the bot's computer, then send rs to restart the bot."
+                    ).format(error=failure),
+                    type=2,
+                )
+        except Exception as e:
+            logging.error(f"Error sending the update result: {e}")
+        try:
+            os.remove(success_file)
+        except OSError:
+            pass
 
     def _perform_periodic_pre_warm(self):
         logging.info("Starting periodic pre-warming for services...")

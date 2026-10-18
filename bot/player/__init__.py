@@ -32,6 +32,13 @@ DEFAULT_USER_AGENT = (
 RESUME_AFTER_ERROR_MIN_SECONDS = 3.0
 
 
+# Seconds to wait before each retry of a YouTube stream that failed to load. The
+# first retry is immediate (it fixes an expired URL). The later ones wait because
+# YouTube can refuse a fresh media URL (HTTP 403) for a few seconds on some videos;
+# yt-dlp sleeps for the same reason. After the last retry the track is given up.
+STREAM_RETRY_DELAYS = (0.0, 3.0, 5.0)
+
+
 class TeamTalkAudioSink(AudioSink):
     """Hands decoded audio to the TeamTalk client (virtual sound device).
 
@@ -68,6 +75,11 @@ class Player:
         )
         self._engine.volume = self.config.default_volume
         self._refresh_in_progress = False
+        # Bumped by every playback start so a delayed stream retry can tell that the
+        # user has moved on and must not restart the old track.
+        self._play_token = 0
+        # The track the user asked for by name or link (not one that follows it).
+        self._requested_track: Optional[Track] = None
         # True while stop() is fading the volume out. A second stop() then cuts
         # the fade short, and a track that ends meanwhile does not start the next.
         self._fading_out = False
@@ -125,6 +137,7 @@ class Player:
                 self.track_index = start_track_index if start_track_index else 0
                 self.track = tracks[self.track_index]
             self._pending_playback_context = timing_context or {}
+            self._requested_track = self.track
             self._play(self.track.url)
         else:
             self._engine.resume()
@@ -169,6 +182,8 @@ class Player:
     ) -> None:
         trace = self._start_playback_trace()
         self._refresh_in_progress = is_refresh
+        if not is_refresh:
+            self._play_token = getattr(self, "_play_token", 0) + 1
         if save_to_recents:
             try:
                 if 0 <= self.track_index < len(self.track_list):
@@ -633,53 +648,131 @@ class Player:
     def on_end_file(self, reason: str, error: str = "") -> None:
         """Called by the FFmpeg engine (on its own thread) when a stream ends
         by itself: ``eof`` for a normal end, ``error`` when it failed."""
-        if (
-            reason == END_ERROR
-            and self.track.service in ("yt", "ytm")
-            and not getattr(self.track, "_stream_refresh_attempted", False)
-        ):
-            self.track._stream_refresh_attempted = True
-            try:
-                logging.warning(
-                    "[PlaybackTiming] youtube_stream_refresh_started "
-                    f"track={self.track.name!r} error={error[:200]!r}"
-                )
-                resume_at = self._engine.last_position
-                if resume_at < RESUME_AFTER_ERROR_MIN_SECONDS:
-                    resume_at = 0.0
-                refreshed_url = self.track.refresh_stream()
-                self._play(
-                    refreshed_url,
-                    save_to_recents=False,
-                    start_position=resume_at,
-                    is_refresh=True,
-                )
+        if reason == END_ERROR and self.track.service in ("yt", "ytm"):
+            if self._retry_failed_stream(error):
                 return
-            except Exception as refresh_error:
-                logging.error(
-                    "[PlaybackTiming] youtube_stream_refresh_failed "
-                    f"track={self.track.name!r} error={refresh_error!r}"
-                )
+            if self.state == State.Playing and not getattr(self, "_fading_out", False):
+                # Out of retries. Never move on silently: the chat already said
+                # the requested song is playing.
+                if not self._give_up_on_stream(self.track, error):
+                    return
         if self.state == State.Playing and self._engine.idle and not self._fading_out:
-            if self.mode == Mode.SingleTrack or self.track.type == TrackType.Direct:
-                # Mesmo em SingleTrack/Direct, a fila tem prioridade
-                if not self.queue.is_empty:
-                    self.play_from_queue()
-                else:
-                    self.stop()
-            elif self.mode == Mode.RepeatTrack:
-                # RepeatTrack repete a atual — fila NÃO interrompe automaticamente
-                # O usuário pode usar 'qs' para pular para a fila manualmente
-                self.play_by_index(self.track_index)
+            self._advance_after_track_end()
+
+    def _advance_after_track_end(self) -> None:
+        if self.mode == Mode.SingleTrack or self.track.type == TrackType.Direct:
+            # Mesmo em SingleTrack/Direct, a fila tem prioridade
+            if not self.queue.is_empty:
+                self.play_from_queue()
             else:
-                # Para todos os outros modos, a fila tem prioridade
-                if not self.queue.is_empty:
-                    self.play_from_queue()
-                else:
-                    try:
-                        self.next()
-                    except errors.NoNextTrackError:
-                        self.stop()
+                self.stop()
+        elif self.mode == Mode.RepeatTrack:
+            # RepeatTrack repete a atual — fila NÃO interrompe automaticamente
+            # O usuário pode usar 'qs' para pular para a fila manualmente
+            self.play_by_index(self.track_index)
+        else:
+            # Para todos os outros modos, a fila tem prioridade
+            if not self.queue.is_empty:
+                self.play_from_queue()
+            else:
+                try:
+                    self.next()
+                except errors.NoNextTrackError:
+                    self.stop()
+
+    def _retry_failed_stream(self, error: str) -> bool:
+        """Schedule the next retry of a failed YouTube stream.
+
+        Returns True when a retry was started or scheduled, False when playback
+        was stopped meanwhile or every retry has been used.
+        """
+        track = self.track
+        if self.state != State.Playing or getattr(self, "_fading_out", False):
+            return False
+        done = getattr(track, "_stream_retry_count", None)
+        if done is None:
+            done = 1 if getattr(track, "_stream_refresh_attempted", False) else 0
+        if done >= len(STREAM_RETRY_DELAYS):
+            return False
+        delay = STREAM_RETRY_DELAYS[done]
+        track._stream_refresh_attempted = True
+        track._stream_retry_count = done + 1
+        resume_at = self._engine.last_position
+        if resume_at < RESUME_AFTER_ERROR_MIN_SECONDS:
+            resume_at = 0.0
+        logging.warning(
+            "[PlaybackTiming] youtube_stream_refresh_started "
+            f"track={track.name!r} attempt={done + 1}/{len(STREAM_RETRY_DELAYS)} "
+            f"delay={delay:.1f}s error={error[:200]!r}"
+        )
+        token = getattr(self, "_play_token", 0)
+        if delay <= 0:
+            self._run_stream_retry(track, resume_at, token)
+        else:
+            timer = threading.Timer(
+                delay, self._run_stream_retry, args=(track, resume_at, token)
+            )
+            timer.daemon = True
+            timer.start()
+        return True
+
+    def _run_stream_retry(self, track: Track, resume_at: float, token: int) -> None:
+        if (
+            self.track is not track
+            or token != getattr(self, "_play_token", 0)
+            or self.state != State.Playing
+        ):
+            logging.debug("[Player] stream retry dropped: playback changed meanwhile")
+            return
+        try:
+            refreshed_url = track.refresh_stream()
+            self._play(
+                refreshed_url,
+                save_to_recents=False,
+                start_position=resume_at,
+                is_refresh=True,
+            )
+        except Exception as refresh_error:
+            logging.error(
+                "[PlaybackTiming] youtube_stream_refresh_failed "
+                f"track={track.name!r} error={refresh_error!r}"
+            )
+            if self._give_up_on_stream(track, str(refresh_error)):
+                self._advance_after_track_end()
+
+    def _give_up_on_stream(self, track: Track, error: str) -> bool:
+        """Report a track that could not be played after every retry.
+
+        Returns True when the caller should go on to the next track, False when
+        playback was stopped. The track the user asked for is never replaced by
+        another song behind their back.
+        """
+        explicit = track is getattr(self, "_requested_track", None)
+        logging.error(
+            "[PlaybackTiming] youtube_stream_unplayable "
+            f"track={track.name!r} attempts={getattr(track, '_stream_retry_count', 0)} "
+            f"requested_by_user={explicit} error={error[:200]!r}"
+        )
+        self._notify_unplayable(track, skipping=not explicit)
+        if explicit:
+            self.stop()
+            return False
+        return True
+
+    def _notify_unplayable(self, track: Track, skipping: bool) -> None:
+        try:
+            translate = self.bot.translator.translate
+            if skipping:
+                text = translate(
+                    'Could not play "{name}": the audio stream could not be loaded. Skipping to the next track.'
+                )
+            else:
+                text = translate(
+                    'Could not play "{name}": the audio stream could not be loaded. Please try again in a moment.'
+                )
+            self.bot.ttclient.send_message(text.format(name=track.name), type=2)
+        except Exception:
+            logging.debug("[Player] could not announce the failed track", exc_info=True)
 
     def on_metadata_update(self, name: str, value: Any) -> None:
         if self._engine.idle:

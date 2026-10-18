@@ -17,6 +17,7 @@ The main [README.md](README.md) describes the Linux/Docker deployment. This file
 - [Running the Bot](#-running-the-bot)
 - [YouTube Bridge and PO-Token Provider](#-youtube-bridge-and-po-token-provider)
 - [YouTube Music, Autoplay and Downloads](#-youtube-music-autoplay-and-downloads)
+- [AI (Gemini)](#-ai-gemini)
 - [Commands](#-commands)
 - [YouTube & YouTube Music Cookies](#-youtube--youtube-music-cookies)
 - [Supported Languages](#-supported-languages)
@@ -44,11 +45,11 @@ The main [README.md](README.md) describes the Linux/Docker deployment. This file
 
 | Component | Needed version | Used for |
 | :--- | :--- | :--- |
-| **Python** | 3.14.7 or newer, **64-bit** | The bot itself |
+| **Python** | **3.15 recommended** (the bot is optimized for it); 3.10 or newer still works. **64-bit** | The bot itself |
 | **Node.js** | LTS | The YouTube.js bridge and the PO-token provider |
 | **Git** | Any recent version | Downloading the bot and installing the bridge and provider from GitHub |
-| **FFmpeg** | Any recent build | Decoding audio |
-| **TeamTalk 5 SDK library** | `TeamTalk5.dll`, **64-bit**, SDK **5.2.3.0 or newer** | Connecting to the TeamTalk server |
+| **FFmpeg** | Any recent build (`install_windows.bat` installs it when it is missing) | Decoding audio |
+| **TeamTalk 5 SDK library** | `TeamTalk5.dll`, **64-bit**, SDK **5.11 or newer** (5.23a is the newest stable release; `install_windows.bat` downloads it) | Connecting to the TeamTalk server |
 | **A TeamTalk account** | — | The login the bot uses on your server |
 | **A Google account cookie file** | — | Recommended for reliable YouTube playback (see [cookies](#-youtube--youtube-music-cookies)) |
 
@@ -60,12 +61,17 @@ Run every command below from PowerShell or Command Prompt opened in the bot fold
 
 ### Step 1 — Install the prerequisites
 
-1. Install **Python 3.1.4.7 or newer, 64-bit** from <https://www.python.org/downloads/>. Tick **Add python.exe to PATH** on the first installer screen.
+1. Install **Python 3.15, 64-bit** (3.10 or newer still works). Python for Windows is now installed through the *Python install manager*:
+   ```powershell
+   winget install 9NQ7512CXL7T --accept-package-agreements
+   py install 3.15
+   ```
+   You can skip this step: `install_windows.bat` runs the same two commands when it finds no suitable Python. The manager is also on <https://www.python.org/downloads/> and in the Microsoft Store.
 2. Install Node.js LTS, Git and FFmpeg:
    ```powershell
    winget install OpenJS.NodeJS.LTS
    winget install Git.Git
-   winget install ffmpeg
+   winget install --id Gyan.FFmpeg -e
    ```
 3. **Close and reopen the terminal** so the new `PATH` is picked up.
 
@@ -82,7 +88,19 @@ You can also use **Code → Download ZIP** on GitHub and extract it. Keep the fo
 
 ### Step 3 — Add the TeamTalk library
 
-Copy the **64-bit** `TeamTalk5.dll` from the TeamTalk 5 SDK into the bot folder, right beside `TTMediaBot.py`. SDK 5.23 or newer is required for the virtual sound device. The bot also looks in a `TeamTalk_DLL\` folder inside the bot folder.
+`install_windows.bat` (Step 4) downloads the newest stable TeamTalk 5 SDK from the official BearWare page <https://bearware.dk/?page_id=419> and copies the **64-bit** `TeamTalk5.dll` into the bot folder, right beside `TTMediaBot.py`; it test-loads the DLL first and keeps your previous one as `TeamTalk5.dll.bak`. The archive and the unpacked SDK live in a temporary folder inside your Windows `Temp` folder (`%TEMP%`) and are deleted afterwards; only `TeamTalk5.dll` stays in the bot folder. The SDK's `Library\TeamTalk_DLL` folder holds the DLL, `TeamTalk5.lib` and a C header; the bot only needs the DLL (`.lib` and header are for C/C++ developers; any other DLL found in that folder is copied with it, and the copy is test-loaded from the bot folder before it is kept, otherwise your previous file is put back).
+
+**7-Zip.** The SDK is a `.7z` archive. The installer opens it with 7-Zip when it is installed, then with `tar.exe` of Windows 10/11. When nothing can open it, it installs 7-Zip with `winget install --id 7zip.7zip` and, when winget is missing or fails, downloads the portable `7zr.exe` from 7-zip.org into the temporary folder (nothing is installed and the file is deleted with the folder).
+
+**Downloads.** The installer identifies itself as a browser, chosen at random from `tools\user_agents.txt` (one per line); when a site answers `403`, `406` or `429` it asks again with the next one. Add or remove lines in that file as you like.
+
+If the installer cannot do it (no internet, the page changed), it prints the manual steps: download the *Standard Edition* for *Windows 10/11 x64*, then in a command window:
+```bat
+7z x -y -o"%TEMP%\ttsdk" tt5sdk_*_win64.7z
+copy "%TEMP%\ttsdk\Library\TeamTalk_DLL\TeamTalk5.dll" "D:\TTMediaBot-master"
+rmdir /s /q "%TEMP%\ttsdk"
+```
+(use your own bot folder in the second line; if the file is not at that path, find it with `dir /s /b "%TEMP%\ttsdk\TeamTalk5.dll"`). Run only this step again with `venv\Scripts\python.exe tools\setup_deps.py sdk` (`--force` fetches it again). SDK 5.11 or newer is required for the virtual sound device. BearWare distributes the SDK download as a 30 day trial. The bot also looks in a `TeamTalk_DLL\` folder inside the bot folder.
 
 ### Step 4 — Run the installer
 
@@ -94,12 +112,14 @@ You can also double-click the file. The installer prints a message for each step
 
 | Step | What it does |
 | :--- | :--- |
-| 1 | Creates the `venv` virtual environment, using `py -3` or `python`. |
+| 1 | Looks for Python 3.15 first, then any 64-bit Python 3.10 or newer (`py -V:3.15`, `py -3`, `python`). When there is none it installs Python 3.15 with `winget install 9NQ7512CXL7T --accept-package-agreements` and `py install 3.15`. Then it creates the `venv` virtual environment. |
 | 2 | Upgrades `pip` and installs `requirements.txt` into the environment. |
 | 3 | Installs the YouTube.js bridge in `youtube_bridge\` with `npm install --omit=dev`. Needs Node.js and Git. |
-| 4 | Clones the PO-token provider into `bgutil-provider\` and builds it (`npm ci`, `npx tsc`). This can take a few minutes. |
-| 5 | Starts the PO-token provider in a **second window** on port `4416`. Keep that window open while the bot runs. |
-| 6 | Checks that FFmpeg and `TeamTalk5.dll` are available and prints a warning for each one that is missing. |
+| 4 | **Asks whether to install the PO-token provider** (`Y` or `N`, then Enter). On `Y` it clones the provider into `bgutil-provider\` and builds it (`npm ci`, `npx tsc`); this can take a few minutes. On `N`, steps 4 and 5 are skipped. |
+| 5 | Starts the PO-token provider in a **second window** on port `4416`. Keep that window open while the bot runs. Skipped when you answered `N`. |
+| 6 | Checks that FFmpeg and `TeamTalk5.dll` are available and installs what is missing: FFmpeg through winget, the SDK from BearWare (unpacked in `%TEMP%`, with 7-Zip installed or a portable `7zr.exe` when nothing else can open the `.7z`). A warning is printed for each piece that could not be set up. |
+
+**Why step 4 asks.** One PO-token provider listening on port `4416` is enough for every bot on the computer. If you already installed or started it for another bot, answer `N`: nothing is installed again and no new window is opened. When something already answers on port `4416` the installer says so and `N` is the default (just press Enter); otherwise `Y` is the default. For a run without questions use `install_windows.bat --pot` (install and start) or `install_windows.bat --no-pot` (skip steps 4 and 5).
 
 If a step prints `[WARNING]`, fix the problem it names and run `install_windows.bat` again. Existing work is reused: the `venv` is kept and a PO-token provider that is already built or already running is not touched.
 
@@ -229,6 +249,7 @@ A backslash is an escape character in JSON, so a path written as `D:\TTMediaBot\
 - The bot **locks** the file while it runs. Starting a second bot with the same file fails with `PermissionError`.
 - A missing file or a wrong `-c` path stops the bot with `Incorrect configuration file path`.
 - A JSON mistake stops the bot with `Syntax error in configuration file`, followed by the position of the error. The usual causes are unescaped backslashes, a missing comma and a trailing comma.
+- When an update adds new settings, the bot adds them to your `config.json` by itself the next time it starts. Your own values are never changed and the file is never reset; the old file is first copied to `config.json.bak`. See [Updating](#-updating).
 - `config.json` is part of the repository. If you update with `git pull` and have edited it, Git may report a conflict. See [Updating](#-updating) for a simple way to avoid this.
 
 ---
@@ -258,7 +279,7 @@ cd bgutil-provider\server
 node build\main.js --port 4416
 ```
 
-Leave that window open. Running `install_windows.bat` again does the same: it skips everything that is already done and starts the provider if nothing answers on port `4416`.
+Leave that window open. Running `install_windows.bat` again does the same when you answer `Y` at step 4: it skips everything that is already done and starts the provider if nothing answers on port `4416`. Answer `N` when another bot already runs it.
 
 To check that it is running:
 
@@ -313,6 +334,54 @@ These features work exactly as described in [README.md](README.md). A short summ
 
 ---
 
+## 🤖 AI (Gemini)
+
+The bot can answer questions with Google's Gemini models, through the official `google-genai` library. Answers can use **Grounding with Google Search**, so questions about the weather, the news or a match get current information instead of old knowledge.
+
+### Turn it on
+
+1. Create an API key at <https://aistudio.google.com/apikey>.
+2. Put it in `config.json` under `ai` → `gemini` → `api_key`. (Or leave it empty and set the `GEMINI_API_KEY` environment variable.)
+3. Install the packages (`install_windows.bat` does it) and restart the bot with `rs`. The `google-genai` library is part of `requirements.txt` and needs Python 3.10 or newer.
+
+### Using it
+
+| Command | What it does |
+| :--- | :--- |
+| `ai QUESTION` | Asks one question, for example `ai bagaimana cuaca di blora saat ini`. Nothing is remembered afterwards. |
+| `chat` | Starts a conversation. From then on **everything you send is a message to the AI**, and the AI remembers what was said. Commands inside a chat: `/clear` forgets the conversation and starts a new topic, `/c` ends the chat. `chat QUESTION` starts a chat and asks at once. |
+
+The answers are plain text (no Markdown symbols), are cut at `max_answer_length` characters and are sent as several messages when they are long. When the answer was found with Google Search, the names of the websites are added at the end.
+
+### Settings (`config.json` → `ai`)
+
+| Setting | Default | Meaning |
+| :--- | :--- | :--- |
+| `enabled` | `true` | Turns the `ai` and `chat` commands on or off. An administrator can also block one with `bc +ai`. |
+| `provider` | `"gemini"` | The service that answers. Only Gemini exists for now. |
+| `cooldown_seconds` | `2.0` | Seconds a user has to wait between two questions. |
+| `max_question_length` | `2000` | Longest question in characters (`0` = no limit). |
+| `max_answer_length` | `1500` | Longest answer in characters (`0` = no limit). |
+| `show_sources` | `true` | Names the websites a searched answer is based on. |
+| `chat_idle_minutes` | `30` | A chat ends by itself after this many minutes without a message (`0` = never). |
+| `max_concurrent_requests` | `3` | Questions answered at the same time, for all users together. |
+| `gemini.api_key` | `""` | Your key. Empty uses `GEMINI_API_KEY` or `GOOGLE_API_KEY`. |
+| `gemini.model` | `"gemini-3.8-flash"` | The model. Google renames and retires models now and then; the current names are at <https://ai.google.dev/gemini-api/docs/models>. |
+| `gemini.google_search` | `true` | Grounding with Google Search. |
+| `gemini.thinking_level` | `"low"` | `"low"` (fastest), `"medium"` or `"high"`; empty uses the model's default. |
+| `gemini.timeout_seconds` | `60` | Seconds to wait for Google before one request is given up. |
+| `gemini.max_retries` | `2` | How often a request is repeated when Google is busy or the network fails. |
+| `gemini.system_instruction` | `""` | Extra instructions for every answer. Empty uses the built-in ones. |
+
+Things to know:
+
+- A single question is sent without being stored. A chat is kept by Google, as part of the Interactions API, so that the bot only has to send the newest message; `/clear` and `/c` forget it on the bot's side, and Google deletes it after its own retention time.
+- Google's free tier has limits, and a key with billing turned on is charged by Google. When a limit is reached the bot says so.
+- Questions and answers go through Google. Do not enable the AI on a server where that is not acceptable.
+- Google has terms for Grounding with Google Search, including how its "Search Suggestions" are shown. A text bot cannot show that widget, so read the terms before you use it publicly.
+
+---
+
 ## 🎮 Commands
 
 Send these commands to the bot via private message (PM) or in the channel (if enabled).
@@ -355,6 +424,8 @@ Send these commands to the bot via private message (PM) or in the channel (if en
 | **sr** | `[on/off]` | Toggles Search Results Mode. When active, `p QUERY` shows a numbered list instead of playing immediately. Save with `sc`. |
 | **sl** | `[number]` | Selects and plays result NUMBER from the last `sr` search list. |
 | **slc** | `[number]` | Sets how many results are shown in `sr` mode. The volatile count defaults to 1 after every restart; no argument shows the current count. |
+| **ai** | `question` | Asks the AI (Gemini). It searches Google when the answer needs current information, such as the weather. |
+| **chat** | `[question]` | Starts a conversation with the AI. Inside a chat everything you send goes to the AI; `/clear` starts a new topic and `/c` ends the chat. |
 | **a** | | Shows about info. |
 
 ### Admin Commands
@@ -446,7 +517,9 @@ Change the language with the `cl` admin command, or set `general.language` in `c
 
 ### The installer says Python was not found
 
-Python is missing, is not 64-bit, or was installed without **Add python.exe to PATH**. Reinstall it with that box ticked, then run `install_windows.bat` again.
+No 64-bit Python 3.10 or newer was found, and winget could not install one. Run `winget install 9NQ7512CXL7T --accept-package-agreements` and then `py install 3.15`, **open a new terminal** (Windows updates the search path only for windows opened afterwards) and run `install_windows.bat` again. If `py` still opens the wrong program, open *Manage app execution aliases* in Windows settings and refresh the *Python install manager* aliases, or use `pymanager install 3.15`.
+
+An existing `venv` keeps the Python it was created with. To move the bot to Python 3.15, install it as above, delete the `venv` folder and run `install_windows.bat` again; your `config.json` is not touched.
 
 ### The installer says the YouTube bridge or PO-token provider was not installed
 
@@ -526,7 +599,7 @@ Check your network and the server status, read `TTMediaBot.log`, and consider ra
 **A:** This guide does not set that up. You would need to start the PO-token provider and `TTMediaBot.bat` yourself, for example with Windows Task Scheduler.
 
 ### Q: What happens to my settings when I update?
-**A:** Your `config.json` is kept if you follow the steps in [Updating](#-updating).
+**A:** They are kept. When an update brings new settings, the bot adds only those to your configuration file the next time it starts (the old file is saved as `config.json.bak`), the way an app or Windows keeps your settings through an update. If you follow the steps in [Updating](#-updating), `git pull` does not touch your own file either.
 
 ---
 
@@ -624,8 +697,8 @@ When the bot folder is a Git clone (you installed with `git clone`), the bot loo
 ```text
 Update available
 A new version of TTMediaBot is ready to install.
-Installed version: 4.1 (85402d3)
-Available version: 4.2 (9f3c2ab)
+Installed version: 4.1.2 (85402d3)
+Available version: 4.2.0 (9f3c2ab)
 Latest change: Fix the reconnect loop (Nico Hilmi, 2026-10-11 14:05)
 To install it, an administrator can send: install
 The bot will restart automatically to finish the update.
@@ -635,8 +708,15 @@ An administrator sends `install`. The bot runs `git pull --ff-only`, tells the c
 
 - Git must be installed and in the `PATH`. A bot that was installed from a ZIP file is not a Git clone and cannot update itself this way; the log says so once.
 - `git pull --ff-only` refuses to overwrite files you edited by hand when the update changes the same files, and it refuses when the folder has commits that are not on GitHub. The bot then answers with the reason and changes nothing. Keep your own settings in `my-config.json`, as described above.
-- If an update changes `requirements.txt`, the bot installs the update but does not restart. Run `venv\Scripts\python.exe -m pip install -U -r requirements.txt`, then send `rs`.
+- If an update changes `requirements.txt`, the bot restarts and installs the packages while it starts, before it loads them, in the way an operating system finishes an update during a restart. This can take a few minutes. If it fails (no internet, for example) the bot still starts and tells the channel; then run `venv\Scripts\python.exe -m pip install -U -r requirements.txt` and send `rs`.
+- After the restart the bot says which version it updated from and to, and how many new settings it added to your configuration.
 - Set `updater.enabled` to `false` to stop the background checks. `install` still works when you send it.
+
+### Your settings in `config.json`
+
+An update that needs new settings only **adds** them. At the next start the bot compares your `config.json` with the settings the new version knows, adds what is missing with its default value and leaves everything you set as it is: values, lists and extra keys. Nothing is reset. Before the file is changed it is copied to `config.json.bak`, the number of added settings is reported in the channel after the restart, and the log has a line starting with `[Config]`.
+
+If a later version has to rename or change a setting, it does so with a small step of its own (see `bot/migrators/config_migrator.py`) and raises `config_version`. A `config.json` whose `config_version` is higher than the bot knows (for instance after you went back to an older version) stops the bot with a clear message instead of being damaged; restore `config.json.bak` or update the bot.
 
 ### Python packages
 
@@ -674,6 +754,19 @@ cd ..\..
 ```
 
 Start it again (see [Starting the PO-token provider again](#starting-the-po-token-provider-again)). This only works when the folder was created by the installer's `git clone`.
+
+---
+
+### Running the tests
+
+All Python tests are in the `tests` folder. From the bot folder:
+
+```powershell
+venv\Scripts\python.exe -m unittest discover -s tests -t . -v
+venv\Scripts\python.exe -m unittest tests.test_ai_manager -v
+```
+
+The first line runs everything, the second a single file. Some tests need Git, and the deployment tests need a Linux shell, so they skip themselves when it is missing.
 
 ---
 

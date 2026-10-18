@@ -1,0 +1,1069 @@
+#!/usr/bin/env python3
+"""Check and install the two programs TTMediaBot needs from outside Python.
+
+* FFmpeg: looked for in the bot folder and on PATH. When it is missing it is
+  installed through the system package manager (winget, Chocolatey or Scoop on
+  Windows; apt, dnf, yum, pacman, zypper, apk, xbps or emerge on Linux; Homebrew
+  on macOS).
+* The TeamTalk 5 SDK library (TeamTalk5.dll / libTeamTalk5.so): the newest stable
+  release is found on the official BearWare download page, downloaded, unpacked,
+  test-loaded and only then copied into place. The download and the unpacked SDK
+  live in a temporary folder (on Windows the user's Temp folder) that is deleted
+  afterwards; only the library that the bot loads is kept. The .7z archive is opened
+  with 7-Zip (installed through winget or, on Windows, a portable 7zr.exe fetched
+  from 7-zip.org when nothing else can open it), py7zr or bsdtar.
+
+This file uses the standard library only, so it also runs before the Python
+requirements are installed. Every download of a "latest" version is read from the
+vendor's page at run time; nothing here pins an old release.
+
+    python tools/setup_deps.py all            # FFmpeg and the SDK
+    python tools/setup_deps.py ffmpeg         # only FFmpeg
+    python tools/setup_deps.py sdk --force    # fetch the SDK even if one is installed
+    python tools/setup_deps.py all --check    # report only, install nothing
+
+The exit code is 0 when everything is in place and 1 when something is missing or
+failed; the reason and the manual steps are printed.
+"""
+
+from __future__ import annotations
+
+import argparse
+import glob
+import html
+import os
+import platform
+import random
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
+
+# ----------------------------------------------------------------- constants
+
+# The official download page, with the alternative addresses of the same page.
+SDK_PAGES = (
+    "https://bearware.dk/?page_id=419",
+    "https://www.bearware.dk/?page_id=419",
+    "https://bearware.dk/?p=419",
+)
+# Directory that holds every release; read when the download page cannot be parsed.
+SDK_DIRECTORY = "https://www.bearware.dk/teamtalksdk/"
+SDK_DOWNLOAD_BASE = "https://www.bearware.dk/teamtalksdk"
+# Newest release seen on the official page when this file was written (8 April 2026).
+# It is only used to probe file names when the page and the directory cannot be read.
+LAST_SEEN_VERSION = "5.23a"
+SEVEN_ZIP_MAGIC = b"7z\xbc\xaf\x27\x1c"
+MIN_ARCHIVE_BYTES = 1_000_000
+
+# Browser identities the download sites accept, one per line (tools/user_agents.txt).
+USER_AGENTS_FILE = Path(__file__).with_name("user_agents.txt")
+# Used only when that file is missing or empty.
+FALLBACK_USER_AGENTS = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+)
+# Answers that mean "this browser identity is not welcome" and not "the file is not there".
+BLOCKED_STATUS = (403, 406, 429)
+MAX_AGENT_TRIES = 6
+
+# 7-Zip's own console program for .7z files (the "7zr.exe" of the 7-Zip download page).
+# It is fetched only on Windows, only when nothing else can open the archive, and only
+# into the temporary folder.
+SEVEN_ZIP_PORTABLE_URLS = (
+    "https://www.7-zip.org/a/7zr.exe",
+    "https://d.7-zip.org/a/7zr.exe",
+    "https://github.com/ip7z/7zip/releases/latest/download/7zr.exe",
+)
+PORTABLE_MIN_BYTES = 100_000
+PORTABLE_MAX_BYTES = 8_000_000
+
+IS_WINDOWS = os.name == "nt"
+
+_ASSET_RE = re.compile(
+    r"https?://(?:www\.)?bearware\.dk/teamtalksdk/v(?P<ver>\d+\.\d+[a-z]?)/"
+    r"(?P<file>(?P<kind>tt5(?:pro)?sdk)_v(?P=ver)_(?P<tag>[a-z0-9_]+?)\.7z)",
+    re.IGNORECASE,
+)
+_DIR_VERSION_RE = re.compile(r'href="(?:[^"]*/)?v(\d+\.\d+[a-z]?)/?"', re.IGNORECASE)
+_DIR_FILE_RE = re.compile(
+    r'href="(?:[^"]*/)?(tt5(?:pro)?sdk)_v(\d+\.\d+[a-z]?)_([a-z0-9_]+?)\.7z"', re.IGNORECASE
+)
+_VERSION_NUMBERS_RE = re.compile(r"(\d+)\.(\d+)")
+
+
+def say(message: str = "") -> None:
+    print(message, flush=True)
+
+
+# ------------------------------------------------------------ small helpers
+
+
+class SetupError(Exception):
+    """A step failed; the message is meant for the person running the installer."""
+
+
+def run_quiet(command: Sequence[str], timeout: float = 20.0) -> Tuple[int, str]:
+    """Run a command, return (exit code, combined output). Never raises on failure."""
+    try:
+        result = subprocess.run(
+            list(command),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        return 1, str(error)
+    return result.returncode, result.stdout or ""
+
+
+def run_visible(command: Sequence[str], timeout: float = 1800.0) -> bool:
+    """Run a command with its output shown, True when it exits with 0."""
+    say("    $ " + " ".join(command))
+    try:
+        return subprocess.run(list(command), timeout=timeout, stdin=subprocess.DEVNULL).returncode == 0
+    except (OSError, subprocess.SubprocessError) as error:
+        say(f"    (could not run it: {error})")
+        return False
+
+
+def with_privileges(command: List[str]) -> Optional[List[str]]:
+    """Put sudo in front of a Linux command when it is needed and available."""
+    if IS_WINDOWS or not hasattr(os, "geteuid") or os.geteuid() == 0:
+        return command
+    if shutil.which("sudo"):
+        return ["sudo"] + command
+    return None
+
+
+# ------------------------------------------------------------------- FFmpeg
+
+
+def ffmpeg_works(path: str) -> bool:
+    code, _ = run_quiet([path, "-hide_banner", "-version"], timeout=15)
+    return code == 0
+
+
+def windows_ffmpeg_locations() -> List[str]:
+    """Where package managers put ffmpeg.exe, for the window that was open before the install."""
+    found: List[str] = []
+    local = os.environ.get("LOCALAPPDATA", "")
+    program_data = os.environ.get("ProgramData", "")
+    home = os.path.expanduser("~")
+    if local:
+        found.append(os.path.join(local, "Microsoft", "WinGet", "Links", "ffmpeg.exe"))
+        found += sorted(
+            glob.glob(os.path.join(local, "Microsoft", "WinGet", "Packages", "Gyan.FFmpeg*", "**", "bin", "ffmpeg.exe"), recursive=True)
+        )
+    program_files = os.environ.get("ProgramFiles", "")
+    if program_files:
+        found += sorted(
+            glob.glob(os.path.join(program_files, "WinGet", "Packages", "Gyan.FFmpeg*", "**", "bin", "ffmpeg.exe"), recursive=True)
+        )
+    if program_data:
+        found.append(os.path.join(program_data, "chocolatey", "bin", "ffmpeg.exe"))
+    found.append(os.path.join(home, "scoop", "shims", "ffmpeg.exe"))
+    return found
+
+
+def find_ffmpeg(bot_dir: Path) -> Optional[Tuple[str, bool]]:
+    """Return (path, reachable_through_PATH) of a working ffmpeg, or None."""
+    name = "ffmpeg.exe" if IS_WINDOWS else "ffmpeg"
+    local = bot_dir / name
+    if local.is_file() and ffmpeg_works(str(local)):
+        return str(local), True
+    on_path = shutil.which("ffmpeg")
+    if on_path and ffmpeg_works(on_path):
+        return on_path, True
+    if IS_WINDOWS:
+        for candidate in windows_ffmpeg_locations():
+            if os.path.isfile(candidate) and ffmpeg_works(candidate):
+                return candidate, False
+    return None
+
+
+Plan = Tuple[str, List[List[str]]]
+
+
+def detect_linux_manager(which: Callable[[str], Optional[str]] = shutil.which) -> Optional[str]:
+    for manager in ("apt-get", "dnf", "yum", "pacman", "zypper", "apk", "xbps-install", "emerge"):
+        if which(manager):
+            return manager
+    return None
+
+
+def ffmpeg_install_plans(
+    system: str, which: Callable[[str], Optional[str]] = shutil.which
+) -> List[Plan]:
+    """Ordered install attempts as (label, [commands]); the first that works wins."""
+    plans: List[Plan] = []
+    if system == "windows":
+        if which("winget"):
+            plans.append(
+                (
+                    "Windows Package Manager (winget)",
+                    [["winget", "install", "--id", "Gyan.FFmpeg", "-e", "--silent",
+                      "--accept-package-agreements", "--accept-source-agreements"]],
+                )
+            )
+        if which("choco"):
+            plans.append(("Chocolatey", [["choco", "install", "ffmpeg", "-y"]]))
+        if which("scoop"):
+            plans.append(("Scoop", [["scoop", "install", "ffmpeg"]]))
+        return plans
+    if system == "darwin":
+        if which("brew"):
+            plans.append(("Homebrew", [["brew", "install", "ffmpeg"]]))
+        return plans
+
+    manager = detect_linux_manager(which)
+    commands: Dict[str, List[Plan]] = {
+        "apt-get": [("APT", [["apt-get", "update"], ["apt-get", "install", "-y", "ffmpeg"]])],
+        # Fedora ships "ffmpeg-free" itself; the full "ffmpeg" comes from RPM Fusion.
+        "dnf": [
+            ("dnf", [["dnf", "install", "-y", "ffmpeg"]]),
+            ("dnf (ffmpeg-free)", [["dnf", "install", "-y", "ffmpeg-free"]]),
+        ],
+        "yum": [("yum", [["yum", "install", "-y", "ffmpeg"]])],
+        "pacman": [("pacman", [["pacman", "-S", "--noconfirm", "--needed", "ffmpeg"]])],
+        "zypper": [("zypper", [["zypper", "--non-interactive", "install", "ffmpeg"]])],
+        "apk": [("apk", [["apk", "add", "ffmpeg"]])],
+        "xbps-install": [("xbps", [["xbps-install", "-Sy", "ffmpeg"]])],
+        "emerge": [("Portage", [["emerge", "--ask=n", "media-video/ffmpeg"]])],
+    }
+    for label, plan_commands in commands.get(manager or "", []):
+        plans.append((label, plan_commands))
+    if which("brew"):  # Linuxbrew as a last resort
+        plans.append(("Homebrew", [["brew", "install", "ffmpeg"]]))
+    return plans
+
+
+def ffmpeg_manual_help(system: str) -> str:
+    if system == "windows":
+        return (
+            "Install FFmpeg yourself, then run this again:\n"
+            "  winget install --id Gyan.FFmpeg -e\n"
+            "or download a build from https://www.gyan.dev/ffmpeg/builds/ and copy ffmpeg.exe\n"
+            "into the bot folder, right beside TTMediaBot.py."
+        )
+    return (
+        "Install FFmpeg with your package manager, then run this again, for example:\n"
+        "  Debian/Ubuntu: sudo apt-get install ffmpeg\n"
+        "  Fedora:        sudo dnf install ffmpeg-free   (full ffmpeg needs RPM Fusion)\n"
+        "  RHEL/Alma:     enable EPEL and RPM Fusion first, then sudo dnf install ffmpeg\n"
+        "  Arch:          sudo pacman -S ffmpeg\n"
+        "  openSUSE:      sudo zypper install ffmpeg   (the full build is in the Packman repository)\n"
+        "  Alpine:        sudo apk add ffmpeg"
+    )
+
+
+def setup_ffmpeg(bot_dir: Path, system: str, check_only: bool = False) -> bool:
+    say("== FFmpeg ==")
+    found = find_ffmpeg(bot_dir)
+    if found:
+        path, on_path = found
+        say(f"  FFmpeg found: {path}")
+        if not on_path:
+            say(
+                "  It is not on PATH in this window yet. Open a new terminal, or put the full path\n"
+                '  in config.json under "player" -> "ffmpeg_path".'
+            )
+        return True
+    say("  FFmpeg was not found.")
+    if check_only:
+        say(ffmpeg_manual_help(system))
+        return False
+    plans = ffmpeg_install_plans(system)
+    if not plans:
+        say("  No supported package manager was found.")
+        say(ffmpeg_manual_help(system))
+        return False
+    for label, commands in plans:
+        say(f"  Trying {label} ...")
+        for index, command in enumerate(commands):
+            if system == "linux":
+                command = with_privileges(command)
+                if command is None:
+                    say("  This needs administrator rights and sudo is not installed. Run this as root.")
+                    break
+            ok = run_visible(command)
+            # "apt-get update" may fail on a stale mirror; the install can still work.
+            if not ok and index == len(commands) - 1:
+                break
+        found = find_ffmpeg(bot_dir)
+        if found:
+            path, on_path = found
+            say(f"  FFmpeg installed: {path}")
+            if not on_path:
+                say("  Open a new terminal so PATH is refreshed, or set player.ffmpeg_path in config.json.")
+            return True
+    say("  Installing FFmpeg did not work.")
+    say(ffmpeg_manual_help(system))
+    return False
+
+
+# ------------------------------------------------------------------- SDK page
+
+
+@dataclass(frozen=True)
+class SdkAsset:
+    version: str  # e.g. "5.23a"
+    edition: str  # "standard" or "professional"
+    tag: str  # e.g. "win64", "ubuntu26_x86_64"
+    url: str
+
+
+def version_key(version: str) -> Tuple[int, int, str]:
+    match = re.match(r"(\d+)\.(\d+)([a-z]?)", version, re.IGNORECASE)
+    if not match:
+        return (0, 0, "")
+    return (int(match.group(1)), int(match.group(2)), match.group(3).lower())
+
+
+def parse_assets(text: str) -> List[SdkAsset]:
+    """All SDK archives named in a page of the official site."""
+    seen: Dict[str, SdkAsset] = {}
+    for raw in _ASSET_RE.finditer(html.unescape(text)):
+        kind = raw.group("kind").lower()
+        asset = SdkAsset(
+            version=raw.group("ver").lower(),
+            edition="professional" if kind == "tt5prosdk" else "standard",
+            tag=raw.group("tag").lower(),
+            url="https://www.bearware.dk/teamtalksdk/v{}/{}".format(raw.group("ver"), raw.group("file")),
+        )
+        seen.setdefault(asset.url.lower(), asset)
+    return list(seen.values())
+
+
+def parse_directory(listing: str, version: str) -> List[SdkAsset]:
+    assets = []
+    for kind, ver, tag in _DIR_FILE_RE.findall(html.unescape(listing)):
+        file_name = f"{kind}_v{ver}_{tag}.7z"
+        assets.append(
+            SdkAsset(
+                version=ver.lower(),
+                edition="professional" if kind.lower() == "tt5prosdk" else "standard",
+                tag=tag.lower(),
+                url=f"{SDK_DOWNLOAD_BASE}/v{version}/{file_name}",
+            )
+        )
+    return assets
+
+
+def tag_matches(tag: str, system: str, machine: str) -> bool:
+    machine = machine.lower()
+    if system == "windows":
+        return tag == "win64" and machine in ("amd64", "x86_64", "x64")
+    if system == "linux":
+        if machine in ("x86_64", "amd64"):
+            return re.fullmatch(r"ubuntu\d+_x86_64", tag) is not None
+        if machine in ("aarch64", "arm64"):
+            return tag == "raspbian_arm64"
+        return False
+    if system == "darwin":
+        return tag == "macos_universal"
+    return False
+
+
+def _tag_rank(tag: str) -> int:
+    match = re.match(r"ubuntu(\d+)", tag)
+    return int(match.group(1)) if match else 0
+
+
+def choose_asset(assets: Sequence[SdkAsset], system: str, machine: str) -> Optional[SdkAsset]:
+    """Newest Standard Edition archive for this system (the bot does not need Professional)."""
+    fitting = [a for a in assets if a.edition == "standard" and tag_matches(a.tag, system, machine)]
+    if not fitting:
+        return None
+    return max(fitting, key=lambda a: (version_key(a.version), _tag_rank(a.tag)))
+
+
+Fetcher = Callable[[str], bytes]
+
+
+def load_user_agents(path: Path = USER_AGENTS_FILE) -> List[str]:
+    """The browser identities in a text file: one per line, blank lines and # comments skipped."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        lines = []
+    agents: List[str] = []
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith("#") and line not in agents:
+            agents.append(line)
+    return agents or list(FALLBACK_USER_AGENTS)
+
+
+class _AgentPool:
+    """The identities of this run, shuffled once, and the one that worked last."""
+
+    def __init__(self) -> None:
+        self.agents: List[str] = []
+        self.index = 0
+
+
+_POOL = _AgentPool()
+
+
+def user_agent_pool() -> _AgentPool:
+    if not _POOL.agents:
+        _POOL.agents = load_user_agents()
+        random.shuffle(_POOL.agents)
+        _POOL.index = 0
+    return _POOL
+
+
+def reset_user_agents() -> None:
+    """Forget the pool; the next request reads the file and shuffles again."""
+    _POOL.agents = []
+    _POOL.index = 0
+
+
+def open_url(
+    url: str,
+    opener: Callable[..., object] = urllib.request.urlopen,
+    timeout: float = 30.0,
+    method: str = "GET",
+):
+    """Open a URL the way a browser would.
+
+    A site that turns a browser identity away (403, 406 or 429) is asked again at once
+    with the next identity of the pool; the one that worked is used first from then on.
+    Any other error, including 404, is raised as it is.
+    """
+    pool = user_agent_pool()
+    last: Optional[urllib.error.HTTPError] = None
+    for step in range(min(len(pool.agents), MAX_AGENT_TRIES)):
+        index = (pool.index + step) % len(pool.agents)
+        request = urllib.request.Request(
+            url, headers={"User-Agent": pool.agents[index], "Accept": "*/*"}, method=method
+        )
+        try:
+            response = opener(request, timeout=timeout)
+        except urllib.error.HTTPError as error:
+            if error.code not in BLOCKED_STATUS:
+                raise
+            last = error
+            continue
+        pool.index = index
+        return response
+    assert last is not None
+    raise last
+
+
+def temporary_directory(prefix: str) -> "tempfile.TemporaryDirectory[str]":
+    """A temporary folder (on Windows inside the user's Temp folder) that is removed afterwards.
+
+    A file that antivirus software still holds when the folder is removed must not make
+    the setup fail; Python 3.10 can be told to ignore that, older versions cannot.
+    """
+    if sys.version_info >= (3, 10):
+        return tempfile.TemporaryDirectory(prefix=prefix, ignore_cleanup_errors=True)
+    return tempfile.TemporaryDirectory(prefix=prefix)
+
+
+def http_get(
+    url: str,
+    timeout: float = 30.0,
+    retries: int = 3,
+    opener: Callable[..., object] = urllib.request.urlopen,
+    sleep: Callable[[float], None] = time.sleep,
+    method: str = "GET",
+) -> bytes:
+    """Fetch a URL with retries. A 4xx answer is final; network errors and 5xx are retried."""
+    last_error: Optional[Exception] = None
+    for attempt in range(1, retries + 1):
+        try:
+            with open_url(url, opener, timeout, method) as response:  # type: ignore[attr-defined]
+                return response.read()
+        except urllib.error.HTTPError as error:
+            last_error = error
+            if 400 <= error.code < 500:
+                break
+        except (urllib.error.URLError, OSError, TimeoutError) as error:
+            last_error = error
+        if attempt < retries:
+            sleep(2.0 * attempt)
+    raise SetupError(f"could not read {url}: {last_error}")
+
+
+def _single_try(fetch: Fetcher) -> Fetcher:
+    """The real fetcher without retries; an injected one (tests) is used as it is."""
+    if fetch is http_get:
+        return lambda url: http_get(url, retries=1)
+    return fetch
+
+
+def discover_assets(fetch: Fetcher = http_get) -> Tuple[List[SdkAsset], List[str]]:
+    """Find the SDK archives on the official site. Returns (assets, notes about what failed)."""
+    notes: List[str] = []
+    for position, page in enumerate(SDK_PAGES):
+        # Only the first address gets the full retry treatment; when the site is
+        # unreachable the other addresses fail fast instead of adding minutes.
+        try:
+            reader = fetch if position == 0 else _single_try(fetch)
+            assets = parse_assets(reader(page).decode("utf-8", errors="replace"))
+        except SetupError as error:
+            notes.append(str(error))
+            continue
+        if assets:
+            return assets, notes
+        notes.append(f"{page} has no SDK links (the page layout may have changed)")
+    fetch = _single_try(fetch)
+    try:
+        listing = fetch(SDK_DIRECTORY).decode("utf-8", errors="replace")
+        versions = sorted(set(_DIR_VERSION_RE.findall(listing)), key=version_key, reverse=True)
+        collected: List[SdkAsset] = []
+        for version in versions[:3]:
+            try:
+                page = fetch(f"{SDK_DOWNLOAD_BASE}/v{version}/").decode("utf-8", errors="replace")
+            except SetupError as error:
+                notes.append(str(error))
+                continue
+            collected += parse_directory(page, version)
+        if collected:
+            return collected, notes
+        notes.append(f"{SDK_DIRECTORY} could not be listed")
+    except SetupError as error:
+        notes.append(str(error))
+    return [], notes
+
+
+def probe_known_names(system: str, machine: str, fetch: Fetcher) -> Optional[SdkAsset]:
+    """Last resort: ask the server whether the newest known file name exists."""
+    tags: Sequence[str]
+    if system == "windows":
+        tags = ("win64",)
+    elif system == "linux" and machine.lower() in ("x86_64", "amd64"):
+        tags = ("ubuntu26_x86_64", "ubuntu24_x86_64", "ubuntu22_x86_64")
+    elif system == "linux":
+        tags = ("raspbian_arm64",)
+    else:
+        tags = ("macos_universal",)
+    for tag in tags:
+        url = f"{SDK_DOWNLOAD_BASE}/v{LAST_SEEN_VERSION}/tt5sdk_v{LAST_SEEN_VERSION}_{tag}.7z"
+        try:
+            fetch_head(url, fetch)
+        except SetupError:
+            continue
+        return SdkAsset(LAST_SEEN_VERSION, "standard", tag, url)
+    return None
+
+
+def fetch_head(url: str, fetch: Fetcher) -> None:
+    """Raise SetupError unless the server has the file. Uses HEAD with the real fetcher."""
+    if fetch is http_get:
+        http_get(url, retries=1, method="HEAD")
+    else:  # an injected fetcher (tests) answers or raises for the URL itself
+        fetch(url)
+
+
+# ----------------------------------------------------------- SDK download
+
+
+def download_archive(
+    url: str,
+    destination: Path,
+    opener: Callable[..., object] = urllib.request.urlopen,
+    retries: int = 3,
+    sleep: Callable[[float], None] = time.sleep,
+) -> None:
+    """Download with retries, a size check and a check that the file really is a 7z archive."""
+    last_error: Optional[Exception] = None
+    part = destination.with_suffix(destination.suffix + ".part")
+    for attempt in range(1, retries + 1):
+        try:
+            written = 0
+            with open_url(url, opener, 60) as response, open(part, "wb") as out:  # type: ignore[attr-defined]
+                expected = response.headers.get("Content-Length")
+                next_report = 25
+                while True:
+                    chunk = response.read(256 * 1024)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    written += len(chunk)
+                    if expected and expected.isdigit() and int(expected) > 0:
+                        percent = written * 100 // int(expected)
+                        if percent >= next_report:
+                            say(f"    {percent}%")
+                            next_report += 25
+            if expected and expected.isdigit() and written != int(expected):
+                raise SetupError(f"incomplete download ({written} of {expected} bytes)")
+            with open(part, "rb") as check:
+                if check.read(len(SEVEN_ZIP_MAGIC)) != SEVEN_ZIP_MAGIC:
+                    raise SetupError("the server did not send a 7z archive (an error page?)")
+            if written < MIN_ARCHIVE_BYTES:
+                raise SetupError(f"the file is only {written} bytes, too small for the SDK")
+            os.replace(part, destination)
+            return
+        except urllib.error.HTTPError as error:
+            last_error = error
+            if 400 <= error.code < 500:
+                break
+        except (SetupError, urllib.error.URLError, OSError, TimeoutError) as error:
+            last_error = error
+        if attempt < retries:
+            say(f"    download failed ({last_error}); retrying ...")
+            sleep(2.0 * attempt)
+    raise SetupError(f"download of {url} failed: {last_error}")
+
+
+# -------------------------------------------------------------- extraction
+
+
+def seven_zip_executables() -> List[str]:
+    names = ["7z", "7zz", "7za", "7zr"]
+    found = [path for path in (shutil.which(name) for name in names) if path]
+    if IS_WINDOWS:
+        for root in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")):
+            if root:
+                candidate = os.path.join(root, "7-Zip", "7z.exe")
+                if os.path.isfile(candidate):
+                    found.append(candidate)
+    return found
+
+
+def _extract_with_py7zr(archive: Path, target: Path) -> Optional[str]:
+    try:
+        import py7zr  # type: ignore[import-not-found]
+    except ImportError:
+        return "py7zr is not installed"
+    try:
+        with py7zr.SevenZipFile(archive) as bundle:
+            bundle.extractall(target)
+        return None
+    except Exception as error:  # py7zr raises many kinds of errors
+        return f"py7zr failed: {error}"
+
+
+def _extract_with_binary(command: Sequence[str]) -> Optional[str]:
+    code, output = run_quiet(command, timeout=600)
+    return None if code == 0 else f"{command[0]} failed: {output.strip()[-300:]}"
+
+
+def seven_zip_install_plans(
+    system: str, which: Callable[[str], Optional[str]] = shutil.which
+) -> List[List[str]]:
+    if system == "windows":
+        return [["winget", "install", "--id", "7zip.7zip", "-e", "--silent",
+                 "--accept-package-agreements", "--accept-source-agreements"]] if which("winget") else []
+    if system == "darwin":
+        return [["brew", "install", "p7zip"]] if which("brew") else []
+    manager = detect_linux_manager(which)
+    table = {
+        "apt-get": [["apt-get", "install", "-y", "p7zip-full"]],
+        "dnf": [["dnf", "install", "-y", "p7zip", "p7zip-plugins"]],
+        "yum": [["yum", "install", "-y", "p7zip", "p7zip-plugins"]],
+        "pacman": [["pacman", "-S", "--noconfirm", "--needed", "p7zip"]],
+        "zypper": [["zypper", "--non-interactive", "install", "p7zip"]],
+        "apk": [["apk", "add", "7zip"]],
+        "xbps-install": [["xbps-install", "-Sy", "p7zip"]],
+        "emerge": [["emerge", "--ask=n", "app-arch/p7zip"]],
+    }
+    return table.get(manager or "", [])
+
+
+def looks_like_seven_zip(path: Path) -> bool:
+    """True when the file is a Windows program of a plausible size that says it is 7-Zip."""
+    try:
+        size = path.stat().st_size
+        with open(path, "rb") as handle:
+            header = handle.read(2)
+    except OSError:
+        return False
+    if header != b"MZ" or not PORTABLE_MIN_BYTES <= size <= PORTABLE_MAX_BYTES:
+        return False
+    _code, output = run_quiet([str(path)], timeout=20)
+    return "7-zip" in output.lower()
+
+
+def download_portable_seven_zip(
+    folder: Path,
+    opener: Callable[..., object] = urllib.request.urlopen,
+) -> Optional[Path]:
+    """Fetch 7zr.exe, 7-Zip's console program for .7z files, into ``folder`` (Windows only).
+
+    Nothing is installed: the file lives in the temporary folder of the setup and is
+    deleted with it. Every address is tried in turn; a file that is not a program of
+    the right size that identifies itself as 7-Zip is thrown away.
+    """
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / "7zr.exe"
+    for url in SEVEN_ZIP_PORTABLE_URLS:
+        try:
+            with open_url(url, opener, 60) as response:  # type: ignore[attr-defined]
+                data = response.read(PORTABLE_MAX_BYTES + 1)
+            if not PORTABLE_MIN_BYTES <= len(data) <= PORTABLE_MAX_BYTES:
+                continue
+            target.write_bytes(data)
+        except (urllib.error.URLError, OSError, TimeoutError):
+            continue
+        if looks_like_seven_zip(target):
+            return target
+        try:
+            target.unlink()
+        except OSError:
+            pass
+    return None
+
+
+def extract_archive(archive: Path, target: Path, system: str, allow_install: bool = True) -> None:
+    """Unpack a .7z with py7zr, a 7-Zip binary or bsdtar.
+
+    When none of them can, 7-Zip is installed through the system package manager and,
+    on Windows, a portable 7zr.exe is fetched into the folder that holds ``target``.
+    """
+    target.mkdir(parents=True, exist_ok=True)
+    problems: List[str] = []
+
+    def attempt() -> bool:
+        error = _extract_with_py7zr(archive, target)
+        if error is None:
+            return True
+        problems.append(error)
+        for exe in seven_zip_executables():
+            error = _extract_with_binary([exe, "x", "-y", f"-o{target}", str(archive)])
+            if error is None:
+                return True
+            problems.append(error)
+        tar = shutil.which("tar")
+        if tar:
+            code, output = run_quiet([tar, "--version"], timeout=10)
+            if code == 0 and ("bsdtar" in output.lower() or "libarchive" in output.lower()):
+                error = _extract_with_binary([tar, "-xf", str(archive), "-C", str(target)])
+                if error is None:
+                    return True
+                problems.append(error)
+        return False
+
+    if attempt():
+        return
+    if allow_install:
+        for command in seven_zip_install_plans(system):
+            if system == "linux":
+                command = with_privileges(command) or command
+            say("  No tool to open .7z files was found; installing 7-Zip ...")
+            if run_visible(command) and attempt():
+                return
+    if allow_install and system == "windows":
+        say("  Downloading 7-Zip's portable console program (7zr.exe) from 7-zip.org ...")
+        portable = download_portable_seven_zip(target.parent)
+        if portable is not None:
+            error = _extract_with_binary([str(portable), "x", "-y", f"-o{target}", str(archive)])
+            if error is None:
+                return
+            problems.append(error)
+        else:
+            problems.append("7zr.exe could not be downloaded from 7-zip.org")
+    raise SetupError("could not unpack the .7z archive. " + "; ".join(problems[-3:]))
+
+
+def find_library(root: Path, system: str) -> Optional[Path]:
+    """Locate the SDK library inside an unpacked archive."""
+    name = {"windows": "TeamTalk5.dll", "darwin": "libTeamTalk5.dylib"}.get(system, "libTeamTalk5.so")
+    matches = [p for p in root.rglob("*") if p.is_file() and p.name.lower() == name.lower()]
+    if not matches:
+        return None
+
+    def rank(path: Path) -> Tuple[int, int, str]:
+        parts = [part.lower() for part in path.parts]
+        return (
+            0 if "teamtalk_dll" in parts else 1,
+            1 if any(token in parts for token in ("x86", "win32", "32bit")) else 0,
+            str(path),
+        )
+
+    return sorted(matches, key=rank)[0]
+
+
+# ------------------------------------------------------------ verification
+
+_PROBE_SCRIPT = r"""
+import ctypes, os, sys
+path = sys.argv[1]
+if sys.platform == "win32":
+    os.add_dll_directory(os.path.dirname(path))
+    library = ctypes.CDLL(path)
+    library.TT_GetVersion.restype = ctypes.c_wchar_p
+else:
+    library = ctypes.CDLL(path)
+    library.TT_GetVersion.restype = ctypes.c_char_p
+version = library.TT_GetVersion()
+if isinstance(version, bytes):
+    version = version.decode("utf-8", "replace")
+print("VERSION=" + str(version))
+"""
+
+
+@dataclass
+class LibraryCheck:
+    ok: bool
+    version: str = ""
+    problem: str = ""
+    glibc_too_old: bool = False
+
+
+def check_library(path: Path) -> LibraryCheck:
+    """Load the library in a separate process and ask it for its version."""
+    code, output = run_quiet([sys.executable, "-c", _PROBE_SCRIPT, str(path)], timeout=60)
+    match = re.search(r"VERSION=(\S+)", output)
+    if code == 0 and match:
+        return LibraryCheck(True, version=match.group(1))
+    lowered = output.lower()
+    glibc = "glibc" in lowered or "libstdc++" in lowered and "version" in lowered
+    if "winerror 193" in lowered or "not a valid win32" in lowered:
+        problem = "the library is for a different architecture (a 64-bit Python needs the 64-bit DLL)"
+    elif glibc:
+        problem = "this Linux is older than the one the library was built for (system libraries too old)"
+    elif "cannot open shared object" in lowered or "winerror 126" in lowered:
+        problem = "a library it depends on is missing: " + output.strip().splitlines()[-1][:200]
+    else:
+        problem = output.strip()[-300:] or "the library could not be loaded"
+    return LibraryCheck(False, problem=problem, glibc_too_old=glibc)
+
+
+def version_numbers(version: str) -> Tuple[int, int]:
+    match = _VERSION_NUMBERS_RE.search(version)
+    return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
+
+
+def sdk_destination(bot_dir: Path, system: str) -> Path:
+    if system == "windows":
+        return bot_dir / "TeamTalk5.dll"
+    if system == "darwin":
+        return bot_dir / "TeamTalk_DLL" / "libTeamTalk5.dylib"
+    return bot_dir / "TeamTalk_DLL" / "libTeamTalk5.so"
+
+
+def install_library(source: Path, destination: Path) -> None:
+    """Copy the verified library into place, keeping the previous one as .bak."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    staged = destination.with_name(destination.name + ".new")
+    shutil.copy2(source, staged)
+    try:
+        if destination.exists():
+            backup = destination.with_name(destination.name + ".bak")
+            if backup.exists():
+                backup.unlink()
+            os.replace(destination, backup)
+        os.replace(staged, destination)
+    except PermissionError as error:
+        if staged.exists():
+            staged.unlink()
+        raise SetupError(
+            f"{destination.name} is in use. Stop the bot (and anything else using it), then run this again."
+        ) from error
+
+
+def restore_previous(destination: Path, had_previous: bool) -> None:
+    """Undo install_library: put the previous file back, or remove the new one when there was none."""
+    backup = destination.with_name(destination.name + ".bak")
+    try:
+        if had_previous and backup.exists():
+            os.replace(backup, destination)
+        elif destination.exists():
+            destination.unlink()
+    except OSError:
+        pass
+
+
+def companion_libraries(library: Path, system: str) -> List[Path]:
+    """Other DLLs that ship in the same folder as TeamTalk5.dll (Windows only).
+
+    The documentation of the SDK names TeamTalk5.dll as the only file needed at run
+    time (TeamTalk5.lib and the header are for building C/C++ programs). A DLL that
+    the library loads from its own folder would have to travel with it, so any that
+    the SDK folder holds are copied too; with the current SDK there may be none.
+    """
+    if system != "windows":
+        return []
+    return sorted(
+        path for path in library.parent.iterdir()
+        if path.is_file() and path.suffix.lower() == ".dll" and path.name.lower() != library.name.lower()
+    )
+
+
+def manual_sdk_help(system: str, bot_dir: Path, reason: str) -> str:
+    destination = sdk_destination(bot_dir, system)
+    kind = {
+        "windows": "Windows 10/11 x64",
+        "darwin": "Mac OS X",
+    }.get(system, "Linux (the build for your distribution) or Raspbian for ARM")
+    if system == "windows":
+        steps = (
+            "    2. Unpack it into a temporary folder with 7-Zip (https://www.7-zip.org; the\n"
+            "       command below needs 7z.exe on the PATH, or give its full path):\n"
+            '         7z x -y -o"%TEMP%\\ttsdk" tt5sdk_*_win64.7z\n'
+            f"    3. Copy {destination.name} from Library\\TeamTalk_DLL to the bot folder:\n"
+            f'         copy "%TEMP%\\ttsdk\\Library\\TeamTalk_DLL\\{destination.name}" "{destination.parent}"\n'
+            '       (if that folder is not there, find the file with: dir /s /b "%TEMP%\\ttsdk\\TeamTalk5.dll")\n'
+            "    4. Delete the temporary folder:\n"
+            '         rmdir /s /q "%TEMP%\\ttsdk"\n'
+        )
+    else:
+        steps = (
+            "    2. Unpack the .7z file with 7-Zip (https://www.7-zip.org).\n"
+            f"    3. Copy {destination.name} (inside Library/TeamTalk_DLL) to {destination.parent}\n"
+        )
+    return (
+        f"  The TeamTalk 5 SDK could not be set up automatically: {reason}\n"
+        "  Do it by hand:\n"
+        f"    1. Open {SDK_PAGES[0]} and download the Standard Edition for {kind}.\n"
+        + steps +
+        "  BearWare distributes this download as a 30 day trial; a license is needed to keep using it."
+    )
+
+
+def setup_sdk(
+    bot_dir: Path,
+    system: str,
+    machine: str,
+    force: bool = False,
+    check_only: bool = False,
+    fetch: Fetcher = http_get,
+    download: Callable[[str, Path], None] = download_archive,
+) -> bool:
+    say("== TeamTalk 5 SDK library ==")
+    destination = sdk_destination(bot_dir, system)
+    installed: Optional[LibraryCheck] = None
+    if destination.exists():
+        installed = check_library(destination)
+        if installed.ok:
+            say(f"  Installed: {destination} (version {installed.version})")
+        else:
+            say(f"  {destination} exists but cannot be used: {installed.problem}")
+    else:
+        say(f"  {destination.name} is not installed.")
+    if check_only:
+        return bool(installed and installed.ok)
+
+    assets, notes = discover_assets(fetch)
+    asset = choose_asset(assets, system, machine)
+    if asset is None:
+        asset = probe_known_names(system, machine, fetch)
+        if asset is not None:
+            say(f"  The download page could not be read; using the known file name for v{asset.version}.")
+    if asset is None:
+        reason = "no download for this system was found on the official site"
+        if notes:
+            reason += " (" + notes[0] + ")"
+        say(manual_sdk_help(system, bot_dir, reason))
+        return bool(installed and installed.ok)
+
+    say(f"  Newest stable release on the official site: v{asset.version} ({asset.tag})")
+    if installed and installed.ok and not force:
+        have, latest = version_numbers(installed.version), version_numbers(asset.version)
+        if have >= latest:
+            say("  The installed library is already the newest release.")
+            return True
+
+    with temporary_directory("ttsdk_") as work:
+        work_dir = Path(work)
+        attempts = [asset]
+        if system == "linux" and machine.lower() in ("x86_64", "amd64"):
+            # An older distribution may not run the newest build; the same release is
+            # sometimes published for older Ubuntu versions as well.
+            for tag in ("ubuntu24_x86_64", "ubuntu22_x86_64"):
+                if tag != asset.tag:
+                    attempts.append(
+                        SdkAsset(asset.version, "standard", tag,
+                                 f"{SDK_DOWNLOAD_BASE}/v{asset.version}/tt5sdk_v{asset.version}_{tag}.7z")
+                    )
+        last_problem = ""
+        for index, candidate in enumerate(attempts):
+            archive = work_dir / f"sdk_{index}.7z"
+            unpacked = work_dir / f"unpacked_{index}"
+            try:
+                say(f"  Downloading {candidate.url}")
+                download(candidate.url, archive)
+                say("  Unpacking ...")
+                extract_archive(archive, unpacked, system)
+            except SetupError as error:
+                last_problem = str(error)
+                if index == 0:
+                    say(f"  {error}")
+                    if len(attempts) == 1:
+                        break
+                continue
+            library = find_library(unpacked, system)
+            if library is None:
+                last_problem = f"{destination.name} was not found inside the archive"
+                continue
+            result = check_library(library)
+            if not result.ok:
+                last_problem = result.problem
+                say(f"  The downloaded library does not load: {result.problem}")
+                if result.glibc_too_old and index + 1 < len(attempts):
+                    say("  Trying the build for an older Ubuntu ...")
+                continue
+            placed: List[Tuple[Path, bool]] = []  # (file in the bot folder, was there something before)
+            try:
+                placed.append((destination, destination.exists()))
+                install_library(library, destination)
+                for extra in companion_libraries(library, system):
+                    target = destination.with_name(extra.name)
+                    placed.append((target, target.exists()))
+                    install_library(extra, target)
+                    say(f"  Also installed {extra.name} (it ships next to {library.name}).")
+            except SetupError as error:
+                say(manual_sdk_help(system, bot_dir, str(error)))
+                return False
+            if system == "windows":
+                # The test above ran inside the temporary folder, where every file of the
+                # SDK folder was at hand; the bot folder must be able to load it alone.
+                final = check_library(destination)
+                if not final.ok:
+                    for path, had_previous in reversed(placed):
+                        restore_previous(path, had_previous)
+                    say(f"  {destination.name} does not load from {destination.parent}: {final.problem}")
+                    say("  The previous files were put back." if placed[0][1] else "  Nothing was installed.")
+                    say(manual_sdk_help(system, bot_dir, final.problem))
+                    return False
+            say(f"  Installed {destination} (version {result.version}).")
+            say("  Note: BearWare distributes this SDK download as a 30 day trial.")
+            return True
+        say(manual_sdk_help(system, bot_dir, last_problem or "the download failed"))
+        return bool(installed and installed.ok)
+
+
+# ----------------------------------------------------------------------- CLI
+
+
+def current_system() -> str:
+    name = platform.system().lower()
+    return {"windows": "windows", "linux": "linux", "darwin": "darwin"}.get(name, name)
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Check and install FFmpeg and the TeamTalk 5 SDK library.")
+    parser.add_argument("what", choices=("all", "ffmpeg", "sdk"), help="what to set up")
+    parser.add_argument("--bot-dir", default=str(Path(__file__).resolve().parent.parent), help="the bot folder")
+    parser.add_argument("--force", action="store_true", help="download the SDK even if the newest one is installed")
+    parser.add_argument("--check", action="store_true", help="only report, install nothing")
+    args = parser.parse_args(argv)
+
+    bot_dir = Path(args.bot_dir).resolve()
+    system, machine = current_system(), platform.machine()
+    ok = True
+    if args.what in ("all", "ffmpeg"):
+        ok = setup_ffmpeg(bot_dir, system, check_only=args.check) and ok
+    if args.what in ("all", "sdk"):
+        ok = setup_sdk(bot_dir, system, machine, force=args.force, check_only=args.check) and ok
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

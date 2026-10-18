@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TTMediaBot\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-16 13:42+0000\n"
+"POT-Creation-Date: 2026-10-12 08:13+0000\n"
 "PO-Revision-Date: 2021-07-17 13:41+0400\n"
 "Last-Translator: \n"
 "Language: pt_BR\n"
@@ -16,13 +16,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
 
-#: /home/admin/joao/TTMediaBot/bot/__init__.py:121
-msgid "Update completed successfully! I am back online."
-msgstr "Atualização concluída com sucesso! Estou online novamente."
-
-#: /home/admin/joao/TTMediaBot/bot/__init__.py:157
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/__init__.py:186
 msgid ""
 "The bot is starting an update process and will restart shortly. It may go"
 " offline at any moment."
@@ -30,17 +26,33 @@ msgstr ""
 "O bot está iniciando um processo de atualização e reiniciará em breve. "
 "Ele poderá ficar offline a qualquer momento."
 
-#: /home/admin/joao/TTMediaBot/bot/__init__.py:189
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/__init__.py:216
+#, python-brace-format
+msgid ""
+"The Python packages of the update could not be installed: {error}. Run "
+"pip install -r requirements.txt on the bot's computer, then send rs to "
+"restart the bot."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/__init__.py:249
 msgid "The bot is restarting now to apply the update. See you in a moment!"
 msgstr ""
 "O bot está reiniciando agora para aplicar a atualização. Volto em um "
 "instante!"
 
-#: /home/admin/joao/TTMediaBot/bot/app_vars.py:12
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/app_vars.py:12
+#, fuzzy
+#| msgid "" "Hello! I am João Almeida. This is my fork of TTMediaBot for
+#| TeamTalk 5.\n" "This repository focuses on stability and support for YouTube
+#| Music.\n" "Repository: https://github.com/JoaoDEVWHADS/TTMediaBot\n"
+#| "Original Authors: Amir Gumerov, Vladislav Kopylov, Beqa Gozalishvili, "
+#| "Kirill Belousov.\n"
 msgid ""
 "Hello! I am João Almeida. This is my fork of TTMediaBot for TeamTalk 5.\n"
 "This repository focuses on stability and support for YouTube Music.\n"
 "Repository: https://github.com/JoaoDEVWHADS/TTMediaBot\n"
+"Cross-platform (Windows and Linux) version by Nico Hilmi.\n"
+"Repository: https://github.com/nicohilmi/TTMediaBot-Cross-platform\n"
 "Original Authors: Amir Gumerov, Vladislav Kopylov, Beqa Gozalishvili, "
 "Kirill Belousov.\n"
 msgstr ""
@@ -51,49 +63,125 @@ msgstr ""
 "Autores Originais: Amir Gumerov, Vladislav Kopylov, Beqa Gozalishvili, "
 "Kirill Belousov.\n"
 
-#: /home/admin/joao/TTMediaBot/bot/TeamTalk/__init__.py:173
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/update_state.py:65
+msgid "Update completed successfully! I am back online."
+msgstr "Atualização concluída com sucesso! Estou online novamente."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/update_state.py:69
+#, python-brace-format
+msgid "TTMediaBot was updated from version {old} to version {new}."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/update_state.py:75
+#, python-brace-format
+msgid "TTMediaBot is now version {version}."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/update_state.py:83
+#, python-brace-format
+msgid ""
+"{count} new setting(s) were added to config.json. Your own settings were "
+"kept."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:343
+#, fuzzy
+#| msgid "URL is not available"
+msgid "Update available"
+msgstr "URL não está disponível"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:344
+msgid "A new version of TTMediaBot is ready to install."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:345
+#, python-brace-format
+msgid "Installed version: {version} ({commit})"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:351
+#, python-brace-format
+msgid "Available version: {version} ({commit})"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:357
+#, python-brace-format
+msgid "Latest commit: {commit}"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:368
+#, python-brace-format
+msgid "Latest change: {subject} ({author}, {date})"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:379
+#, python-brace-format
+msgid "This update contains {count} changes."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:384
+msgid ""
+"It also changes the required Python packages. They are installed while "
+"the bot restarts."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:389
+msgid "To install it, an administrator can send: install"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:392
+msgid "The bot will restart automatically to finish the update."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:397
+msgid ""
+"This copy has changes that are not on GitHub, so it must be updated "
+"manually."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/TeamTalk/__init__.py:206
 msgid "Send \"h\" for help"
 msgstr "Envie \"h\" para obter ajuda"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:144
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:179
 msgid "Unknown command. Send \"h\" for help."
 msgstr "Comando desconhecido. Envie \"h\" para obter ajuda."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:150
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:724
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:730
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1130
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1213
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1285
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1359
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:136
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:150
-#: /home/admin/joao/TTMediaBot/bot/modules/uploader.py:85
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:185
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:800
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:806
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1213
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1295
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1367
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1441
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:130
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:144
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/uploader.py:85
 #, python-brace-format
 msgid "Error: {}"
 msgstr "erro: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:162
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:207
 msgid "You are banned"
 msgstr "Você está banido"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:166
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:211
 msgid "You are not in bot's channel"
 msgstr "Você não está no canal do bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:170
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:215
 msgid "Bot is locked"
 msgstr "O bot está bloqueado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:174
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:219
 msgid "This command is blocked"
 msgstr "Este comando está bloqueado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:198
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:243
 msgid "Unknown command"
 msgstr "Comando desconhecido"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:21
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:23
 msgid ""
 "+/-COMMAND Blocks or unblocks commands. +COMMAND adds command to the "
 "blocklist. -COMMAND removes from it. Without a command shows the "
@@ -103,57 +191,57 @@ msgstr ""
 "à lista de bloqueados. -COMANDO remove da lista. Sem comando, exibe a "
 "lista de bloqueados"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:32
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:322
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:352
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:471
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:483
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:539
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1059
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1081
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1145
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:34
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:336
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:366
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:547
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:559
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:615
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1143
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1165
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1228
 msgid "The list is empty"
 msgstr "A lista está vazia"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:37
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:304
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:336
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:434
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:39
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:318
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:350
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:510
 msgid "Added"
 msgstr "Adicionado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:39
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:41
 msgid "This command is already added"
 msgstr "Este comando já foi adicionado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:45
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:310
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:342
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:446
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:47
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:324
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:356
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:522
 msgid "Deleted"
 msgstr "Excluído"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:47
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:49
 msgid "This command is not blocked"
 msgstr "Este comando não está bloqueado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:56
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:58
 msgid "GENDER Changes bot's gender. n neutral, m male, f female"
 msgstr "GENDER  muda o sexo do bot. n neutro, m masculino, f feminino"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:70
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:72
 msgid "LANGUAGE Changes bot's language"
 msgstr "LANGUAGE muda a linguagem do bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:78
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:80
 msgid "The language has been changed"
 msgstr "A linguagem foi alterada"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:80
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:82
 msgid "Incorrect language"
 msgstr "linguagem incorreta"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:83
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:85
 #, python-brace-format
 msgid ""
 "Current language: {current_language}. Available languages: "
@@ -162,11 +250,11 @@ msgstr ""
 "Linguagem atual: {current_language}. Idiomas disponíveis: "
 "{available_languages}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:93
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:95
 msgid "NICKNAME Changes bot's nickname"
 msgstr "NICKNAME Muda o apelido do bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:104
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:106
 msgid ""
 "r/f Clears bot's cache. r clears recents, f clears favorites, without an "
 "option clears the entire cache"
@@ -174,19 +262,19 @@ msgstr ""
 "r/f Limpa o cache do bot. r limpa recentes, f limpa favoritos, sem um "
 "opção limpa todo o cache"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:112
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:114
 msgid "Cache cleared"
 msgstr "Cache limpo"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:116
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:118
 msgid "Recents cleared"
 msgstr "Última lista de faixas limpa"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:120
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:122
 msgid "Favorites cleared"
 msgstr "Favoritos limpos"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:127
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:132
 msgid ""
 "Join channel. first argument is channel name or id, second argument is "
 "password, split argument \" | \", if password is undefined, don't type "
@@ -196,77 +284,87 @@ msgstr ""
 "segundo é a senha, separe com \" | \". Se a senha não for definida, não "
 "digite o segundo argumento."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:146
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:151
 msgid "This channel does not exist"
 msgstr "Este canal não existe"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:160
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:160
+#, fuzzy, python-brace-format
+#| msgid "Joining channel: {}"
+msgid "Joined the channel"
+msgstr "Entrando no canal: {}"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:168
 #, python-brace-format
 msgid "Error joining channel: {error}"
 msgstr "Erro ao entrar no canal: {error}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:208
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:179
+msgid "No confirmation from the server, the bot may not have joined the channel"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:222
 msgid "Enables or disables voice transmission"
 msgstr "Habilita ou desativa a transmissão de áudio"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:215
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:217
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:229
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:231
 msgid "Voice transmission enabled"
 msgstr "Transmissão de voz habilitada"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:222
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:236
 msgid "Voice transmission disabled"
 msgstr "Transmissão de áudio desativada"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:228
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:242
 msgid "Locks or unlocks the bot"
 msgstr "Bloqueia ou desbloqueia o bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:233
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:247
 msgid "Locked"
 msgstr "Bloqueado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:235
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:249
 msgid "Unlocked"
 msgstr "Desbloqueado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:242
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:256
 msgid "STATUS Changes bot's status"
 msgstr "STATUS altera o status do bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:252
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:266
 msgid "Enables or disables event handling"
 msgstr "Habilita ou desativa o manuseio de eventos"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:259
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:273
 msgid "Event handling is enabled"
 msgstr "O manuseio de eventos está habilitado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:261
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:275
 msgid "Event handling is disabled"
 msgstr "Manuseio de eventos desativado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:269
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:283
 msgid "Enables or disables sending of channel messages"
 msgstr "Habilita ou desativa o envio de mensagens de canal"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:277
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:291
 msgid "Channel messages enabled"
 msgstr "Mensagens de canal habilitadas"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:279
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:293
 msgid "Channel messages disabled"
 msgstr "Mensagens de canal desativadas"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:286
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:300
 msgid "Saves bot's configuration"
 msgstr "Salva a configuração do bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:290
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:304
 msgid "Configuration saved"
 msgstr "Configuração salva"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:297
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:311
 msgid ""
 "+/-USERNAME Manages a list of administrators. +USERNAME adds a user. "
 "-USERNAME removes it. Without an option shows the list"
@@ -274,16 +372,16 @@ msgstr ""
 "+/-USUÁRIO Gerencia a lista de administradores. +USUÁRIO adiciona um "
 "usuário. -USUÁRIO remove da lista. Sem opção, exibe a lista"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:313
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:327
 msgid "This user is not in the admin list"
 msgstr "Este usuário não está na lista de administradores"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:319
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:349
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:333
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:363
 msgid "<Anonymous>"
 msgstr "<Anônimo>"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:329
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:343
 msgid ""
 "+/-USERNAME Manages a list of banned users. +USERNAME adds a user. "
 "-USERNAME removes it. Without an option shows the list"
@@ -291,36 +389,96 @@ msgstr ""
 "+/-USUÁRIO Gerencia a lista de usuários banidos. +USUÁRIO adiciona um "
 "usuário. -USUÁRIO remove da lista. Sem opção, exibe a lista"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:344
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:358
 msgid "This user is not banned"
 msgstr "Este usuário não está bloqueado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:358
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:372
 msgid "Quits the bot"
 msgstr "Para o bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:367
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:381
 msgid "Restarts the bot"
 msgstr "Reinicia o bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:382
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:403
+msgid ""
+"[on/off/SECONDS] Turns the fade-out when stopping playback on or off. A "
+"number of seconds sets its length and turns it on. Without an option it "
+"switches between on and off"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:425
+msgid "Fade-out on stop is disabled"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:427
+#, python-brace-format
+msgid "Fade-out on stop is enabled ({seconds} seconds)"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:435
+msgid "Installs the latest update from GitHub, then restarts the bot"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:441
+msgid "An update is already being installed"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:467
+#, python-brace-format
+msgid "Unable to check for updates: {error}"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:469
+#, python-brace-format
+msgid "TTMediaBot is up to date (version {version})."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:473
+msgid "Installing the update. This takes a moment."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:478
+#, python-brace-format
+msgid "The update could not be installed: {error}"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:491
+msgid ""
+"The update was installed, but it changes the required Python packages. "
+"Run pip install -r requirements.txt on the bot's computer, then send rs "
+"to restart the bot."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:495
+msgid ""
+"Update installed. The bot restarts now and installs the required Python "
+"packages while it starts."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:502
+msgid "Update installed. Restarting now to apply it."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:511
 msgid "Returns current channel's ID"
 msgstr "Retorna o ID do canal atual"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/command.py:28
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/command.py:30
 msgid "help text not found"
 msgstr "Texto  de ajuda não encontrado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:20
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:21
 msgid "Shows command help"
 msgstr "Mostra ajuda de comando"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:29
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:30
 msgid "Shows information about the bot"
 msgstr "Mostra informações sobre o bot"
 
 # --- Search Results Mode (sr/sl/slc) ---
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:39
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:40
 msgid ""
 "QUERY Plays tracks found for the query. If no query is given, plays or "
 "pauses current track. When search results mode (sr) is active, shows a "
@@ -330,95 +488,111 @@ msgstr ""
 " pausa a faixa atual. Com o modo de resultados (sr) ativo, exibe uma "
 "lista numerada"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:46
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:651
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:751
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:46
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:727
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:827
 msgid "Searching..."
 msgstr "Procurando..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:55
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:55
 msgid "Search results:"
 msgstr "Resultados da busca:"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:58
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:58
 msgid "Use 'sl NUMBER' to select a track"
 msgstr "Use 'sl NÚMERO' para selecionar uma faixa"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:67
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:74
 #, python-brace-format
 msgid "{nickname} requested {request}"
 msgstr "{nickname} solicitou {request}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:72
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:202
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:219
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:769
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:879
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:967
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:78
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:239
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:265
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:282
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:428
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:853
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:963
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1051
 #, python-brace-format
 msgid "Playing {}"
 msgstr "tocando {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:76
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:659
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:758
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1121
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:82
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:108
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:735
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:834
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1205
 msgid "Nothing is found for your query"
 msgstr "Nada encontrado para sua pesquisa"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:79
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:761
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:85
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:837
 msgid "The selected service is currently unavailable"
 msgstr "O serviço selecionado está indisponível no momento"
 
 # | msgid "URL Plays a stream from bot given URL"
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:91
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:97
 msgid "URL Plays a stream from a given URL"
 msgstr "URL Reproduz uma stream a partir de uma determinada URL"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:101
-#, python-brace-format
-msgid "{nickname} requested playing from a URL"
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:102
+msgid "Loading URL / playlist..."
+msgstr "Carregando URL / playlist..."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:113
+#, fuzzy, python-brace-format
+#| msgid "{nickname} requested playing from a URL"
+msgid "{nickname} requested playing from a URL ({count} tracks)"
 msgstr "{nickname} começou a reproduzir a partir de uma URL"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:107
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:120
+#, python-brace-format
+msgid "Loaded {count} tracks"
+msgstr "{count} faixas carregadas"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:125
 msgid "Incorrect protocol"
 msgstr "Protocolo inválido"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:109
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:127
 msgid "Cannot process stream URL"
 msgstr "Não foi possível processar a URL da stream"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:111
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:129
 msgid "The path cannot be found"
 msgstr "O caminho não pode ser encontrado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:119
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:137
 msgid "Stops playback"
 msgstr "Para a reprodução"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:126
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:151
 #, python-brace-format
 msgid "{nickname} stopped playback"
 msgstr "{nickname} parou a reprodução"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:132
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:165
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:184
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:208
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:225
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:374
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:383
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:436
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:454
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:500
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:561
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:582
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:866
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:164
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:197
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:216
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:243
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:259
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:271
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:288
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:432
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:448
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:459
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:512
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:530
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:576
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:637
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:658
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:950
 msgid "Nothing is playing"
 msgstr "Nada está tocando"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:139
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:171
 #, python-brace-format
 msgid ""
 "VOLUME Sets the volume to a value between 0 and {max_volume}. If no "
@@ -427,12 +601,12 @@ msgstr ""
 "VOLUME Define o volume para um valor entre 0 e {max_volume}. Se não "
 "houver volume é especificado, o nível de volume atual é exibido"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:160
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:192
 #, python-brace-format
 msgid "STEP Seeks current track backward. the default step is {seek_step} seconds"
 msgstr "STEP busca a faixa atual para trás. o passo padrão é {seek_step} segundos"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:179
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:211
 #, python-brace-format
 msgid "STEP Seeks current track forward. the default step is {seek_step} seconds"
 msgstr ""
@@ -440,24 +614,49 @@ msgstr ""
 "secondsSTEP busca a faixa atual para frente. o passo padrão é {seek_step}"
 " segundos"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:197
-msgid "Plays next track"
-msgstr "Reproduz a próxima faixa"
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:229
+msgid ""
+"[NUMBER|?] Plays next track, jumps to track number, or shows current "
+"position with ?"
+msgstr ""
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:206
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:883
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:251
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:440
+msgid "Incorrect number"
+msgstr "Número incorreto"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:253
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:442
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:455
+#, python-brace-format
+msgid "Playing {} {}"
+msgstr "Tocando {} {}"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:257
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:446
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:524
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:557
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:596
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:918
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1035
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1172
+msgid "Out of list"
+msgstr "Fora da lista"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:269
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:967
 msgid "No next track"
 msgstr "Nenhuma próxima faixa"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:214
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:277
 msgid "Plays previous track"
 msgstr "Reproduz a faixa anterior"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:223
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:286
 msgid "No previous track"
 msgstr "Nenhuma faixa anterior"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:232
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:295
 msgid ""
 "MODE Sets the playback mode. If no mode is specified, the current mode "
 "and a list of modes are displayed"
@@ -465,27 +664,27 @@ msgstr ""
 "MODE Define o modo de reprodução. Se nenhum modo for especificado, o modo"
 " atual e um lista de modos são exibidos"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:237
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:300
 msgid "Single Track"
 msgstr "Faixa única"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:238
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:301
 msgid "Repeat Track"
 msgstr "Repetir Faixa"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:239
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:302
 msgid "Track list"
 msgstr "Lista de faixas"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:240
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:303
 msgid "Repeat track list"
 msgstr "Repetir lista de faixas"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:241
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:304
 msgid "Random"
 msgstr "Aleatório"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:244
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:307
 #, python-brace-format
 msgid ""
 "Current mode: {current_mode}\n"
@@ -494,16 +693,16 @@ msgstr ""
 "Modo atual: {current_mode}\n"
 "{modes}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:262
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:325
 #, python-brace-format
 msgid "Current mode: {mode}"
 msgstr "Modo atual: {mode}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:266
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:329
 msgid "Incorrect mode"
 msgstr "Modo incorreto"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:275
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:338
 msgid ""
 "SERVICE Selects the service to play from, sv SERVICE h returns additional"
 " help. If no service is specified, the current service and a list of "
@@ -513,7 +712,7 @@ msgstr ""
 "adicional. Se nenhum serviço for especificado, o serviço atual e a lista "
 "de serviços disponíveis são exibidos"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:283
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:346
 #, python-brace-format
 msgid ""
 "Unknown service.\n"
@@ -522,7 +721,7 @@ msgstr ""
 "Serviço desconhecido.\n"
 "{}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:292
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:355
 #, python-brace-format
 msgid ""
 "Current service: {}\n"
@@ -531,12 +730,12 @@ msgstr ""
 "Serviço atual: {}\n"
 "Aviso: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:294
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:357
 #, python-brace-format
 msgid "Current service: {}"
 msgstr "Serviço atual: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:300
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:363
 #, python-brace-format
 msgid ""
 "Error: {error}\n"
@@ -545,26 +744,26 @@ msgstr ""
 "Erro: {error}\n"
 "{service} está desativado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:307
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:370
 #, python-brace-format
 msgid "{service} is disabled"
 msgstr "{service} está desativado"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:314
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:377
 msgid "This service has no additional help"
 msgstr "Este serviço não possui ajuda adicional"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:331
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:394
 #, python-brace-format
 msgid "{} (Error)"
 msgstr "{} (Erro)"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:335
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:398
 #, python-brace-format
 msgid "{} (Warning: {})"
 msgstr "{} (Aviso: {})"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:342
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:405
 #, python-brace-format
 msgid ""
 "Current service: {current_service}\n"
@@ -577,31 +776,13 @@ msgstr ""
 "{available_services}\n"
 "envie sv SERVICE h para ajuda adicional"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:354
-msgid "NUMBER Selects track by number from the list of current results"
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:417
+#, fuzzy
+#| msgid "NUMBER Selects track by number from the list of current results"
+msgid "[NUMBER|?] Selects track by number, or shows current position with ?"
 msgstr "NUMBER Seleciona a música por número da lista de resultados atuais"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:366
-msgid "Incorrect number"
-msgstr "Número incorreto"
-
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:368
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:379
-#, python-brace-format
-msgid "Playing {} {}"
-msgstr "Tocando {} {}"
-
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:372
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:448
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:481
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:520
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:834
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:951
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1088
-msgid "Out of list"
-msgstr "Fora da lista"
-
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:390
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:466
 msgid ""
 "SPEED Sets playback speed from 0.25 to 4. If no speed is given, shows "
 "current speed"
@@ -609,12 +790,12 @@ msgstr ""
 "SPEED Define a velocidade de reprodução de 0.25 a 4. Se não for "
 "fornecida, mostra a velocidade atual"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:395
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:471
 #, python-brace-format
 msgid "Current rate: {}"
 msgstr "Taxa atual: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:409
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:485
 msgid ""
 "+/-NUMBER Manages favorite tracks. + adds the current track to favorites."
 " - removes a track requested from favorites. If a number is specified "
@@ -624,29 +805,29 @@ msgstr ""
 "favoritos. - remove uma faixa solicitada dos favoritos. Se um número for "
 "especificado após +/-, adiciona/remove uma faixa com esse número"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:415
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:491
 msgid "This command is not available for guest users"
 msgstr "Este comando não está disponível para usuários convidados"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:452
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:528
 msgid "This track is not in favorites"
 msgstr "Esta faixa não está nos favoritos"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:461
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:526
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:537
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:602
 #, python-brace-format
 msgid "{number}: {track_name}"
 msgstr "{number}: {track_name}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:489
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:565
 msgid "Gets a direct link to the current track"
 msgstr "Obtém um link direto para a faixa atual"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:498
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:574
 msgid "URL is not available"
 msgstr "URL não está disponível"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:507
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:583
 msgid ""
 "NUMBER Plays a track with  the given number from a list of recent tracks."
 " Without a number shows recent tracks"
@@ -654,53 +835,53 @@ msgstr ""
 "NÚMERO Reproduz uma faixa com o número dado da lista de faixas recentes. "
 "Sem número, exibe as faixas recentes"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:532
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:608
 #, python-brace-format
 msgid "{number}: {track_url}"
 msgstr "{number}: {track_url}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:547
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:623
 msgid "Downloads the current track and uploads it to the channel."
 msgstr "Baixa a faixa atual e a envia para o canal."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:557
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:633
 msgid "Downloading..."
 msgstr "Baixando..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:559
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:580
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:635
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:656
 msgid "Live streams cannot be downloaded"
 msgstr "Transmissões ao vivo não podem ser baixadas"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:568
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:644
 msgid "Downloads the current track as video and uploads it to the channel."
 msgstr "Baixa a faixa atual como vídeo e faz o upload para o canal."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:578
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:654
 msgid "Downloading video..."
 msgstr "Baixando vídeo..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:588
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:664
 msgid "Makes the bot join your current channel"
 msgstr "Faz o bot entrar no seu canal atual"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:609
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:626
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:685
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:702
 #, python-brace-format
 msgid "Joining channel: {}"
 msgstr "Entrando no canal: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:618
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:694
 #, python-brace-format
 msgid "Failed to join channel. Error: {}"
 msgstr "Falha ao entrar no canal. Erro: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:629
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:705
 #, python-brace-format
 msgid "Failed to join channel: {}"
 msgstr "Falha ao entrar no canal: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:636
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:712
 msgid ""
 "Downloads all tracks from a playlist/album URL, zips them, and uploads to"
 " the channel."
@@ -708,20 +889,25 @@ msgstr ""
 "Baixa todas as faixas de uma URL de playlist/álbum, compacta em ZIP e "
 "envia para o canal."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:644
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:720
 #, python-brace-format
 msgid "Current progress: {}"
 msgstr "Progresso atual: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:648
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:724
 msgid "Please send the link to the playlist or album."
 msgstr "Por favor, envie o link da playlist ou álbum."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:667
-msgid "This command is for playlists and albums. For single tracks, use 'dl'."
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:743
+#, fuzzy
+#| msgid "This command is for playlists and albums. For single tracks, use
+#| 'dl'."
+msgid ""
+"This command is for playlists, albums, and channels. For single tracks, "
+"use 'dl'."
 msgstr "Este comando é para playlists e álbuns. Para faixas avulsas, use 'dl'."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:742
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:818
 msgid ""
 "QUERY Searches for a track and adds it to the queue. If nothing is "
 "playing, starts immediately"
@@ -729,51 +915,51 @@ msgstr ""
 "QUERY Pesquisa uma faixa e a adiciona à fila. Se nada estiver tocando, "
 "começa imediatamente"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:778
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:862
 #, python-brace-format
 msgid "{nickname} added to queue: {track}"
 msgstr "{nickname} adicionou à fila: {track}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:784
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:868
 #, python-brace-format
 msgid "Added to queue [{position}]: {track}"
 msgstr "Adicionado à fila [{position}]: {track}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:791
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:875
 msgid "Lists all tracks in the queue"
 msgstr "Lista todas as faixas na fila"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:797
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:881
 msgid "The queue is empty"
 msgstr "A fila está vazia"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:805
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:889
 #, python-brace-format
 msgid "Queue ({count} track(s)):"
 msgstr "Fila ({count} faixa(s)):"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:815
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:899
 msgid "NUMBER Removes track number NUMBER from the queue"
 msgstr "NUMBER Remove a faixa de número NUMBER da fila"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:840
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:924
 #, python-brace-format
 msgid "Removed from queue: {track}"
 msgstr "Removido da fila: {track}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:847
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:931
 msgid "Clears the entire queue"
 msgstr "Limpa toda a fila"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:851
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:935
 msgid "The queue is already empty"
 msgstr "A fila já está vazia"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:854
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:938
 msgid "Queue cleared"
 msgstr "Fila limpa"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:861
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:945
 msgid ""
 "Skips current track and plays the next one from the queue. Falls back to "
 "normal next if queue is empty"
@@ -781,12 +967,12 @@ msgstr ""
 "Pula a faixa atual e reproduz a próxima da fila. Se a fila estiver vazia,"
 " vai para a próxima normal"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:872
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:956
 #, python-brace-format
 msgid "Playing next from queue: {}"
 msgstr "Tocando a próxima da fila: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:896
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:980
 msgid ""
 "Toggles search results mode. When active, 'p QUERY' shows a numbered "
 "list. Use 'sr on' or 'sr off' to set explicitly. Save permanently with "
@@ -796,17 +982,17 @@ msgstr ""
 "uma lista numerada. Use 'sr on' ou 'sr off' para definir explicitamente. "
 "Salve permanentemente com 'sc'"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:904
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:914
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:988
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:998
 msgid "Search results mode: ON"
 msgstr "Modo de resultados: ATIVADO"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:908
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:916
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:992
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1000
 msgid "Search results mode: OFF"
 msgstr "Modo de resultados: DESATIVADO"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:928
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1012
 msgid ""
 "NUMBER Selects and plays result NUMBER from the last search list "
 "(requires search results mode to be active)"
@@ -814,11 +1000,11 @@ msgstr ""
 "NÚMERO Seleciona e toca o resultado NÚMERO da última lista de busca "
 "(requer o modo de resultados ativo)"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:947
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1031
 msgid "No search results available. Use 'p QUERY' to search first"
 msgstr "Nenhum resultado disponível. Use 'p CONSULTA' para buscar primeiro"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:961
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1045
 #, python-brace-format
 msgid "{nickname} selected: {track}"
 msgstr "{nickname} selecionou: {track}"
@@ -826,7 +1012,7 @@ msgstr "{nickname} selecionou: {track}"
 # | msgid "" "NUMBER Sets how many results are shown when search results mode
 # is
 # | " "active. Without a number shows current count. Resets to 5 on restart"
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:978
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1062
 #, fuzzy
 msgid ""
 "NUMBER Sets how many results are shown when search results mode is "
@@ -835,66 +1021,66 @@ msgstr ""
 "NÚMERO Define quantos resultados são exibidos no modo de resultados. Sem "
 "número, mostra a quantidade atual. Reseta para 5 ao reiniciar"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:984
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1068
 #, python-brace-format
 msgid "Search results count: {count}"
 msgstr "Quantidade de resultados: {count}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:994
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1078
 msgid "Invalid count. Please enter a number greater than 0"
 msgstr "Quantidade inválida. Digite um número maior que 0"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:999
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1083
 #, python-brace-format
 msgid "Search results count set to {count}"
 msgstr "Quantidade de resultados definida para {count}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1007
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1091
 msgid "LINK Adds a link to the download list."
 msgstr "LINK Adiciona um link à lista de download."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1019
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1103
 #, python-brace-format
 msgid "Added link to the list. Total: {count}"
 msgstr "Link adicionado à lista. Total: {count}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1028
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1112
 msgid "LINK1 LINK2 ... Adds multiple space-separated links to the download list."
 msgstr ""
 "LINK1 LINK2 ... Adiciona vários links separados por espaço à lista de "
 "download."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1043
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1127
 #, python-brace-format
 msgid "Added {added_count} links. Total list size: {count}"
 msgstr "{added_count} links adicionados. Tamanho total da lista: {count}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1053
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1137
 msgid "Lists all links in the download list."
 msgstr "Lista todos os links na lista de download."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1072
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1156
 msgid "NUMBER_OR_LINK Removes a link from the download list by its index or URL."
 msgstr "NÚMERO_OU_LINK Remove um link da lista de download pelo seu índice ou URL."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1097
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1181
 msgid "Link not found in the list"
 msgstr "Link não encontrado na lista"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1099
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1183
 #, python-brace-format
 msgid "Removed link: {link}"
 msgstr "Link removido: {link}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1106
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1190
 msgid "LINK Downloads a link directly and uploads it to the channel."
 msgstr "LINK Baixa um link diretamente e o envia para o canal."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1114
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1198
 msgid "Searching and downloading..."
 msgstr "Pesquisando e baixando..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1139
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1222
 msgid ""
 "Downloads all links in your list and uploads them to the channel. Can "
 "download normally or as a ZIP archive."
@@ -902,7 +1088,7 @@ msgstr ""
 "Baixa todos os links da sua lista e os envia para o canal. Pode baixar "
 "normalmente ou como um arquivo ZIP."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1151
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1234
 msgid ""
 "How do you want to download these links?\n"
 "1. Download individually (Normal)\n"
@@ -914,74 +1100,74 @@ msgstr ""
 "2. Compactar tudo em um arquivo ZIP\n"
 "Responda apenas com 1 ou 2."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1162
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1245
 #, python-brace-format
 msgid "Starting local download of {count} links..."
 msgstr "Iniciando download local de {count} links..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1165
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1248
 #, python-brace-format
 msgid "Starting download of {count} links..."
 msgstr "Iniciando o download de {count} links..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1171
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1254
 #, python-brace-format
 msgid "Resolving and zipping locally {count} links..."
 msgstr "Resolvendo e compactando localmente {count} links..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1174
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1257
 #, python-brace-format
 msgid "Resolving and zipping {count} links..."
 msgstr "Resolvendo e compactando {count} links..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1176
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1259
 msgid "Invalid option. Please send 'ads' again to select."
 msgstr "Opção inválida. Envie 'ads' novamente para selecionar."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1182
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1221
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1265
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1303
 #, python-brace-format
 msgid "Processing link {number}/{total}: {link}"
 msgstr "Processando link {number}/{total}: {link}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1190
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1229
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1273
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1311
 #, python-brace-format
 msgid "Nothing is found for: {link}"
 msgstr "Nada foi encontrado para: {link}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1199
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1281
 #, python-brace-format
 msgid "Error downloading {link}: {error}"
 msgstr "Erro ao baixar {link}: {error}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1249
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1366
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1331
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1448
 msgid "All downloads completed successfully!"
 msgstr "Todos os downloads foram concluídos com sucesso!"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1254
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1371
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1336
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1453
 #, python-brace-format
 msgid "Downloads completed with {error_count} error(s)."
 msgstr "Downloads concluídos com {error_count} erro(s)."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1263
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1293
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1345
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1375
 msgid "Resolving links..."
 msgstr "Resolvendo links..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1277
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1310
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1359
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1392
 msgid "Error: No valid tracks found to download."
 msgstr "Erro: Nenhuma faixa válida encontrada para baixar."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1330
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:94
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1412
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:88
 msgid "Error: Failed to download any tracks from this playlist."
 msgstr "Erro: Falha ao baixar qualquer faixa desta playlist."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1382
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1464
 msgid ""
 "Toggles local download mode for the 'ads' command. When active, files are"
 " saved locally to the VPS instead of uploaded to TeamTalk."
@@ -990,68 +1176,189 @@ msgstr ""
 "arquivos são salvos localmente no VPS em vez de serem enviados ao "
 "TeamTalk."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1388
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1470
 msgid "Local download mode (adsc) enabled."
 msgstr "Modo de download local (adsc) ativado."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1390
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1472
 msgid "Local download mode (adsc) disabled."
 msgstr "Modo de download local (adsc) desativado."
 
-#: /home/admin/joao/TTMediaBot/bot/connectors/tt_player_connector.py:36
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1480
+msgid "The AI is turned off"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1483
+msgid ""
+"The AI is not set up yet. An administrator needs to add a Gemini API key "
+"to config.json (ai.gemini.api_key)"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1487
+msgid ""
+"The AI needs the google-genai package. An administrator can install it "
+"with: pip install -r requirements.txt"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1491
+msgid "The AI service set in config.json (ai.provider) does not exist"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1494
+#, python-brace-format
+msgid "Your question is too long. The limit is {limit} characters"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1498
+#, python-brace-format
+msgid "Please wait {seconds} seconds before asking again"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1502
+msgid "Your previous question is still being answered"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1504
+msgid "The AI is busy right now. Please try again in a moment"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1507
+msgid ""
+"Google did not accept the API key. An administrator needs to check "
+"ai.gemini.api_key"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1510
+msgid "The Gemini API is not available in the country of the bot"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1512
+msgid "The usage limit of the AI was reached. Please try again later"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1514
+msgid "The AI service is not available right now. Please try again later"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1516
+msgid "The AI took too long to answer. Please try again"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1518
+msgid "The bot cannot reach the AI service. Please try again later"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1521
+#, python-brace-format
+msgid ""
+"The AI model {model} is not available. An administrator needs to check "
+"ai.gemini.model"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1524
+msgid "The AI did not give an answer. Try asking in another way"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1525
+#, python-brace-format
+msgid "The AI could not answer: {reason}"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1542
+msgid "AI is thinking..."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1554
+msgid ""
+"The previous conversation was no longer available, so a new one was "
+"started."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1560
+#, python-brace-format
+msgid "Sources: {sources}"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1568
+#, python-brace-format
+msgid ""
+"Welcome to {name} chat! You can start talking to the AI.\n"
+"Commands:\n"
+"/clear - Forget the current conversation and start a new topic.\n"
+"/c - End the chat session."
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1576
+msgid ""
+"QUESTION Asks the AI. It searches Google when the answer needs current "
+"information, such as the weather or the news. Send chat to hold a "
+"conversation instead"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1587
+msgid ""
+"Starts a conversation with the AI. Everything you send is then a message "
+"to the AI, until you send /c. /clear starts a new topic"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1613
+msgid "Chat ended"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1616
+msgid "Conversation cleared. You can start a new topic"
+msgstr ""
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/connectors/tt_player_connector.py:36
 #, python-brace-format
 msgid "Playing: {track_name}"
 msgstr "Reproduzindo: {track_name}"
 
-#: /home/admin/joao/TTMediaBot/bot/connectors/tt_player_connector.py:42
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/connectors/tt_player_connector.py:42
 #, python-brace-format
 msgid "Playing: {stream_url}"
 msgstr "Reproduzindo: {stream_url}"
 
-#: /home/admin/joao/TTMediaBot/bot/connectors/tt_player_connector.py:53
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/connectors/tt_player_connector.py:53
 #, python-brace-format
 msgid "Paused: {track_name}"
 msgstr "{track_name} Pausado"
 
-#: /home/admin/joao/TTMediaBot/bot/connectors/tt_player_connector.py:59
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/connectors/tt_player_connector.py:59
 #, python-brace-format
 msgid "Paused: {stream_url}"
 msgstr "{stream_url} Pausado"
 
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:51
-#, python-brace-format
-msgid "Error: This playlist is too large (max {} tracks)."
-msgstr "Erro: Esta playlist é muito grande (máximo {} faixas)."
-
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:61
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:55
 #, python-brace-format
 msgid "Downloading playlist: {}"
 msgstr "Baixando playlist: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:68
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:62
 #, python-brace-format
 msgid "Downloading track {}: {}"
 msgstr "Baixando faixa {}: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:100
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:94
 msgid "Zipping tracks..."
 msgstr "Compactando faixas..."
 
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:115
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:109
 #, python-brace-format
 msgid "Uploading ZIP: {}"
 msgstr "Enviando ZIP: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/modules/uploader.py:64
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/uploader.py:64
 msgid "Error: Downloaded file not found."
 msgstr "Erro: Arquivo baixado não encontrado."
 
-#: /home/admin/joao/TTMediaBot/bot/services/yt.py:290
-#: /home/admin/joao/TTMediaBot/bot/services/yt.py:542
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/services/yt.py:164
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/services/yt.py:433
 msgid "Unknown Title"
 msgstr "Título Desconhecido"
 
-#: /home/admin/joao/TTMediaBot/bot/services/ytm.py:357
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/services/yt.py:191
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/services/ytm.py:122
 msgid "Unknown"
 msgstr "Desconhecido"
 
@@ -1196,9 +1503,9 @@ msgstr "Desconhecido"
 #~ msgid "Not authorized to upload files to this channel"
 #~ msgstr "Não autorizado a enviar arquivos para este canal"
 
+#~ msgid "Plays next track"
+#~ msgstr "Reproduz a próxima faixa"
 
-msgid "Loading URL / playlist..."
-msgstr "Carregando URL / playlist..."
+#~ msgid "Error: This playlist is too large (max {} tracks)."
+#~ msgstr "Erro: Esta playlist é muito grande (máximo {} faixas)."
 
-msgid "Loaded {count} tracks"
-msgstr "{count} faixas carregadas"

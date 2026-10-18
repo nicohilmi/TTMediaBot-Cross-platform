@@ -1,5 +1,4 @@
 from __future__ import annotations
-from importlib.machinery import SourceFileLoader
 import logging
 import os
 from threading import Thread
@@ -11,6 +10,7 @@ from types import ModuleType
 import types
 import sys
 
+from bot import utils
 from bot.TeamTalk.structs import *
 
 if TYPE_CHECKING:
@@ -245,22 +245,22 @@ class TeamTalkThread(Thread):
                 )[1]
                 == ".py"
             ):
-                module = SourceFileLoader(
+                module = utils.load_python_module(
                     os.path.splitext(
                         self.config.event_handling.event_handlers_file_name
                     )[0],
                     self.config.event_handling.event_handlers_file_name,
-                ).load_module()
+                )
             elif os.path.isdir(
                 self.config.event_handling.event_handlers_file_name
             ) and "__init__.py" in os.listdir(
                 self.config.event_handling.event_handlers_file_name
             ):
-                module = SourceFileLoader(
+                module = utils.load_python_module(
                     self.config.event_handling.event_handlers_file_name,
                     self.config.event_handling.event_handlers_file_name
                     + "/__init__.py",
-                ).load_module()
+                )
             else:
                 logging.error(
                     "Incorrect path to event handlers. An empty module will be used"

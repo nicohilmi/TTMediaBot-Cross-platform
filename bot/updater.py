@@ -381,7 +381,7 @@ class UpdateChecker:
         if info.requirements_changed:
             lines.append(
                 translate(
-                    "It also changes the required Python packages. After installing, run: pip install -r requirements.txt"
+                    "It also changes the required Python packages. They are installed while the bot restarts."
                 )
             )
         if info.can_fast_forward:

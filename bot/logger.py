@@ -214,6 +214,13 @@ def initialize_logger(bot: Bot) -> None:
             rotating_file_handler.setLevel(level)
             handlers.append(rotating_file_handler)
     if mode & Mode.STDOUT == Mode.STDOUT:
+        # A console with a legacy code page (Windows) cannot show every character of a
+        # song title; print a replacement character instead of losing the log line.
+        for console in (sys.stdout, sys.stderr):
+            try:
+                console.reconfigure(errors="replace")
+            except (AttributeError, ValueError, OSError):
+                pass
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
         stream_handler.setLevel(level)

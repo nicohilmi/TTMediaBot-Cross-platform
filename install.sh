@@ -16,13 +16,17 @@ ARCH=$(uname -m)
 # Audio: FFmpeg decodes the media and the bot sends it straight to TeamTalk, so
 # no sound server (PulseAudio) or mpv is installed. alsa-lib is only the runtime
 # library the TeamTalk SDK links against.
+# FFmpeg and 7-Zip are not in the lists below on purpose: one package that a
+# distribution does not have (ffmpeg on Fedora without RPM Fusion, p7zip on
+# RHEL without EPEL) would abort the whole install. tools/setup_deps.py installs
+# them further down, with a fallback per distribution, and says what to do by hand.
 if command -v apt-get &> /dev/null; then
     EXTRA_PACKAGES=""
     if [[ "$ARCH" == "aarch64" || "$ARCH" =~ ^arm ]]; then
         EXTRA_PACKAGES="libportaudio2"
     fi
     sudo apt-get update -y
-    sudo apt-get install -y libasound2 p7zip-full ffmpeg python3-venv git python3-pip ca-certificates curl gnupg $EXTRA_PACKAGES
+    sudo apt-get install -y libasound2 python3-venv git python3-pip ca-certificates curl gnupg $EXTRA_PACKAGES
 
     # Node.js LTS Installation via NodeSource for APT
     echo "--- Configuring Node.js LTS Repository ---"
@@ -34,7 +38,7 @@ elif command -v dnf &> /dev/null; then
     if [[ "$ARCH" == "aarch64" || "$ARCH" =~ ^arm ]]; then
         EXTRA_PACKAGES="portaudio"
     fi
-    sudo dnf install -y alsa-lib p7zip ffmpeg python3 git python3-pip ca-certificates curl gnupg2 nodejs $EXTRA_PACKAGES
+    sudo dnf install -y alsa-lib python3 git python3-pip ca-certificates curl gnupg2 nodejs $EXTRA_PACKAGES
 
 elif command -v yum &> /dev/null; then
     EXTRA_PACKAGES=""
@@ -42,28 +46,28 @@ elif command -v yum &> /dev/null; then
         EXTRA_PACKAGES="portaudio"
     fi
     sudo yum install -y epel-release || true
-    sudo yum install -y alsa-lib p7zip ffmpeg python3 git python3-pip ca-certificates curl gnupg2 nodejs $EXTRA_PACKAGES
+    sudo yum install -y alsa-lib python3 git python3-pip ca-certificates curl gnupg2 nodejs $EXTRA_PACKAGES
 
 elif command -v pacman &> /dev/null; then
     EXTRA_PACKAGES=""
     if [[ "$ARCH" == "aarch64" || "$ARCH" =~ ^arm ]]; then
         EXTRA_PACKAGES="portaudio"
     fi
-    sudo pacman -Sy --noconfirm alsa-lib p7zip ffmpeg python git python-pip ca-certificates curl gnupg nodejs $EXTRA_PACKAGES
+    sudo pacman -Sy --noconfirm alsa-lib python git python-pip ca-certificates curl gnupg nodejs $EXTRA_PACKAGES
 
 elif command -v zypper &> /dev/null; then
     EXTRA_PACKAGES=""
     if [[ "$ARCH" == "aarch64" || "$ARCH" =~ ^arm ]]; then
         EXTRA_PACKAGES="portaudio"
     fi
-    sudo zypper install -y alsa p7zip ffmpeg python3 git python3-pip ca-certificates curl gpg2 nodejs $EXTRA_PACKAGES
+    sudo zypper install -y alsa python3 git python3-pip ca-certificates curl gpg2 nodejs $EXTRA_PACKAGES
 
 elif command -v apk &> /dev/null; then
     EXTRA_PACKAGES=""
     if [[ "$ARCH" == "aarch64" || "$ARCH" =~ ^arm ]]; then
         EXTRA_PACKAGES="portaudio"
     fi
-    sudo apk add --no-cache alsa-lib p7zip ffmpeg python3 git py3-pip ca-certificates curl gnupg nodejs $EXTRA_PACKAGES
+    sudo apk add --no-cache alsa-lib python3 git py3-pip ca-certificates curl gnupg nodejs $EXTRA_PACKAGES
 
 else
     echo "Error: Unsupported package manager. Please install dependencies manually."
@@ -92,10 +96,14 @@ if [ -d "TTMediaBot" ]; then
     (cd youtube_bridge && npm install --omit=dev)
 
 
-    # Adjust httpx version
-    echo "--- Adjusting httpx version ---"
-    pip uninstall -y httpx
-    pip install httpx==0.27.0
+    # No httpx downgrade here: google-genai needs httpx 0.28.1 or newer, and
+    # requirements.txt already installs a matching httpx[http2].
+
+    echo "--- Checking FFmpeg and the TeamTalk 5 SDK library ---"
+    python tools/setup_deps.py all --bot-dir "$(pwd)" || {
+        echo "WARNING: FFmpeg and/or the TeamTalk library still need attention (see above)."
+        echo "         Fix that, then run: python tools/setup_deps.py all"
+    }
 
     # Final permission adjustment
     echo "--- Applying 775 permissions to files ---"

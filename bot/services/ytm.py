@@ -210,7 +210,30 @@ class YtmService(_Service):
     def _fetch_autoplay_async(self, video_id: str) -> None:
          threading.Thread(target=self._fetch_autoplay_sync, args=(video_id,), daemon=True, name=f"Autoplay_{video_id}").start()
 
+    # Autoplay is fetched from several places at once (search and the "few tracks
+    # left" check in get). Without this, each fetch merged the same recommendations
+    # into the queue, which then held every song two or three times.
+    _autoplay_lock = threading.Lock()
+    _autoplay_inflight: set = set()
+
     def _fetch_autoplay_sync(self, video_id: str) -> bool:
+        with self._autoplay_lock:
+            if video_id in self._autoplay_inflight:
+                logging.debug(f"[YTM] Autoplay fetch for {video_id} is already running")
+                return False
+            self._autoplay_inflight.add(video_id)
+        try:
+            # One merge at a time: the duplicate check reads the list that the
+            # previous fetch has just extended.
+            with self._autoplay_merge_lock:
+                return self._fetch_autoplay_unlocked(video_id)
+        finally:
+            with self._autoplay_lock:
+                self._autoplay_inflight.discard(video_id)
+
+    _autoplay_merge_lock = threading.Lock()
+
+    def _fetch_autoplay_unlocked(self, video_id: str) -> bool:
          try:
               logging.info(f"[YTM] Fetching continuous recommendations for {video_id}")
               recommendation_tracks = self._get_recommendation_tracks(video_id, 50)

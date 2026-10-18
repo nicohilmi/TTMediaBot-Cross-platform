@@ -32,6 +32,8 @@ ENV/
 
 # Project Specific
 # config.json (Allowed)
+# Copy of config.json made by the bot before an update changes it
+config.json.bak
 cookies.txt
 *.log
 TTMediaBot.log

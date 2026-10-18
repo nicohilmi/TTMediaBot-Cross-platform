@@ -4,6 +4,50 @@ All notable updates to this fork are documented here, in reverse chronological o
 
 ---
 
+## 🔧 Version 4.1.2 — Bug hunt, TeamTalk SDK 5.23a installer and Python 3.15 *(10/16/2026)*
+
+The version number stays 4.1.2: no command or option was added or removed.
+
+### 🐛 Fixed: a different song was played after a failed stream (the "typed one song, got another" report)
+- **🔎 Symptom:** the chat said `Playing Bersenja Gurau`, but another song was heard. On 13 Oct at 10:00 the stream of the requested track answered `HTTP error 403 Forbidden` twice within 0.5 s; the player then treated the error as the end of the track and started the next recommendation (`Dunia Yang Nanti`) without a word. The same double 403 appears for `iqro` (14:41) and `Reain lode iqro` (21:27).
+- **🚀 Fix (`bot/player/__init__.py`):** a failed YouTube / YouTube Music stream is retried up to three times: at once (this repairs an expired URL), then after 3 s and after 5 s (`STREAM_RETRY_DELAYS`). Delayed retries run on a timer and are dropped when the user started or stopped something else meanwhile (`_play_token`). When every retry failed, the chat gets a message (`Could not play "…": the audio stream could not be loaded …`). A song the user asked for stops instead of being replaced; a following list or autoplay track is skipped, with the same message.
+- **ℹ️ About the cause of the 403:** all eight 403 warnings in the log are `c=MWEB`, `itag=251` URLs with `pot=` present. The yt-dlp issues #16768 and #17395 (2026) report the same intermittent 403 for `mweb` and describe YouTube holding the media URL back for a few seconds (a pre-roll ad wait) which yt-dlp sleeps through. That fits the log (403 within 0.15 s of the request, the same track works a minute later) but it could not be reproduced here, so the timing is a hypothesis; the fix does not depend on it.
+
+### 🐛 Fixed: autoplay recommendations were added to the queue two or three times
+- The search and the "few tracks left" check start an autoplay fetch at the same moment; each merged the same 15 recommendations. The log shows `Adding 15 continuous recommendations (total: 16)` twice and then `(total: 46)`. `_fetch_autoplay_sync` (`yt.py`, `ytm.py`) now skips a fetch that is already running for the same video and merges one fetch at a time. A test proves the duplicates appear without the lock.
+
+### 🐛 Fixed: a search for one song could play a FULL ALBUM
+- `p vata morgana,simpatik musik` played `… SIMPATIK MUSIK FULL ALBUM TERBARU 2026`. With one result wanted, a top result that is a multi-song upload (full album, non stop, playlist, N hours / jam, compilation, megamix) now makes the bot look at the next eight results and take the first real song (`bot/services/result_filter.py`). A query that itself asks for an album is left alone. This only costs a second search when the top result looks like a collection.
+- `YtService.search` no longer turns every failure (bridge down, timeout) into "nothing found"; it raises a service error that says what failed. "Nothing found" is reported only when nothing was found.
+
+### 🔍 Added: stutter and stalls are now visible in `TTMediaBot.log` ("it stutters but nothing is logged")
+- `bot/player/ffmpeg_engine.py`: `Audio underrun #N: no decoded audio for X s at Y s into the track`, `Audio is reaching the sink late: N late frames (worst M ms)`, `Stream notice:` for ffmpeg's own reconnect / reset / timeout messages (they used to be kept in memory only), a per-track `Stall summary`, and a count of frames dropped by the TeamTalk sink in the existing warning.
+- After an underrun the pump refills its prebuffer (at most 2 s) before playing on. Before, it resumed with a single frame in hand, so a connection that delivers barely enough data stalled again on every frame.
+
+### 🧰 Added: `tools/setup_deps.py`, used by `install_windows.bat` and `install.sh`
+- **FFmpeg:** checked in the bot folder and on `PATH`; when missing it is installed with winget (`Gyan.FFmpeg`), Chocolatey or Scoop on Windows, Homebrew on macOS, and apt, dnf (with an `ffmpeg-free` fallback for Fedora), yum, pacman, zypper, apk, xbps or Portage on Linux. When nothing works the manual steps are printed.
+- **TeamTalk SDK:** the newest stable release is read from the official page <https://bearware.dk/?page_id=419> (v5.23a, 8 April 2026, at the time of writing), with the alternative page addresses, the release directory and the known file names as fallbacks. The archive is downloaded with retries, checked to be a real 7z file, unpacked (py7zr, 7-Zip or bsdtar; 7-Zip is installed when none is present), the library is loaded in a separate process and asked for its version, and only then copied into place. The previous library is kept as `.bak`; a library that does not load is never installed; on an old Linux the build for an older Ubuntu is tried. If anything fails the user is told what to do by hand. BearWare offers the SDK download as a 30 day trial.
+- `install.sh` no longer lists `ffmpeg` and `p7zip` in the distribution package line (one missing package, for example `ffmpeg` on Fedora without RPM Fusion, aborted the whole install), and no longer downgrades `httpx` to 0.27.0: `google-genai` requires `httpx>=0.28.1`.
+- `bot/ffmpeg_locator.py` also finds the `ffmpeg.exe` that winget, Chocolatey or Scoop installed, so a Command Prompt opened before the install does not report FFmpeg as missing.
+
+### 🐍 Python 3.15 (released 9 October 2026)
+- The main change for this code base is PEP 686, UTF-8 as the default text encoding. Every text-mode `open()` now names its encoding (`bot/config/__init__.py`, `bot/TeamTalk/__init__.py`), the installer tool decodes subprocess output with `errors="replace"`, and the console log no longer fails on a character the Windows code page cannot show (`bot/logger.py`). Running the test suite with `-X warn_default_encoding -W default` shows no warning from the bot's own code.
+- The compiled dependencies publish Python 3.15 wheels (`pydantic-core` 2.48 / 2.49 on PyPI; `numpy` 2.5 according to a downstream release note). The pure Python ones were not checked one by one. The tests in this change were run on Python 3.12; please run them once on 3.15.
+
+### 📚 Docs
+- New `README_DEVELOPERS_AI.md`: how to develop and debug the bot with an AI assistant (give the chronology and evidence, one bug per session, prompt templates, a code map).
+- Corrected contradicting requirements: `README_WINDOWS.md` said both "Python 3.14.7" and "Python 3.1.4.7" while the installer wants 3.10; the SDK minimum was given as 5.2.3.0, 5.23, 5.11 and 5.8.1 in different places. The minimum is 5.11 (the virtual sound device functions are in the 5.11A API documentation), the target is 5.23a.
+
+### ✅ Tests
+- 280 tests pass (189 before). New: `test_playback_failure_handling.py`, `test_autoplay_race.py`, `test_result_filter.py`, `test_ffmpeg_stall_logging.py`, `test_setup_deps.py`, `test_ffmpeg_locator_windows.py`.
+
+### ⚠️ Known limits and things found but not changed
+- **Docker:** the image is based on Debian 11 (`python:3.10.12-slim-bullseye`) and `install_git_clone.sh` / `update.sh` still download a third-party TeamTalk build of unknown version. The Linux SDK 5.23a is built for Ubuntu 26 and may not load on that glibc, so Docker was not switched; use `tools/setup_deps.py sdk` on a native install, and rebuild the image on a newer base before using 5.23a there.
+- **Earlier changelog entry:** "Windows Port — YouTube 403 Forbidden Protection" (10/08/2026) describes `MAX_CONSECUTIVE_STREAM_FAILURES`, the provider autostart in `bridge_launcher.py` and `test_youtube_403_protection.py`. None of them is in this repository (the installer starts the provider in a second window instead). The v2.8.0 entry says the search cache lasts 10 minutes; `youtube_bridge/server.mjs` sets `SEARCH_CACHE_TTL_MS` to 24 hours.
+- Not found to be wrong, so not changed: `uSampleIndex = 0` in `TT_InsertAudioBlock` (the SDK documentation says it is ignored); the default model `gemini-3.8-flash` and `google-genai>=2.16.0` (both exist).
+
+---
+
 ## 🔧 Unreleased — FFmpeg Audio Engine & Windows Support
 
 - Replaced `mpv`/`libmpv` and PulseAudio with an FFmpeg based player: FFmpeg decodes to PCM and the bot sends it to TeamTalk through the virtual sound device (`TT_InsertAudioBlock`). No sound card, sound server or virtual cable is required.
@@ -908,3 +952,99 @@ All notable updates to this fork are documented here, in reverse chronological o
 
 ### 📁 Files Changed
 - `bot/commands/__init__.py`, `bot/commands/admin_commands.py`, `CHANGELOG.md`.
+
+---
+
+## 🪟 Windows Port — Version 4.1.2: Gemini AI, Config Updates That Keep Your Settings, Packages Installed During the Restart, a Reviewed Indonesian Translation, Tests in One Folder *(10/13/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+### 🤖 New: Ask Gemini From TeamTalk (`ai` and `chat`)
+- **💬 `ai QUESTION`:** one question, one answer, nothing remembered (for example `ai bagaimana cuaca di blora saat ini`). **`chat`** starts a conversation: everything the user sends is then a message to the AI, `/clear` forgets the conversation and starts a new topic, `/c` ends the chat (`chat QUESTION` starts a chat and asks at once). A chat also ends by itself after `chat_idle_minutes` without a message, and when the user leaves the bot's channel.
+- **🔎 Grounding with Google Search:** answers use the `google_search` tool, so weather, news and results are current. The websites an answer was found on are named at its end (`show_sources`).
+- **📦 Official SDK:** the new `google-genai` library (`google-genai>=2.16.0,<3` in `requirements.txt`, Python 3.10 or newer), through Google's Interactions API, the one Google's documentation now recommends. A single question is sent with `store=False`; a chat continues with `previous_interaction_id`. A conversation that has expired on Google's side is replaced by a new one, and the user is told.
+- **🧱 Kept apart from the rest:** the code is in the new `bot/ai/` package (`gemini.py`, `manager.py`, `provider.py`, `text.py`, `errors.py`). The SDK is only imported when the first question arrives, so the bot starts even if the package is missing. Another service is added by writing one class and listing it in `PROVIDERS`; `ai.provider` selects it.
+- **📝 Plain text:** Markdown symbols (`**`, `#`, code fences, `*` bullets) are removed from answers, and answers longer than `max_answer_length` are cut at a sentence end.
+- **🛡️ Limits and errors:** a cooldown per user, one question at a time per user, a limit of simultaneous questions for the whole bot, a timeout, and retries with a growing pause for busy servers and network failures. Every failure is answered in words: not set up, wrong key, usage limit reached, model not found, no connection, took too long, region not supported.
+- **⚙️ Settings:** new `ai` section in `config.json` (`enabled`, `provider`, `cooldown_seconds`, `max_question_length`, `max_answer_length`, `show_sources`, `chat_idle_minutes`, `max_concurrent_requests`) with a `gemini` part (`api_key`, `model`, `google_search`, `thinking_level`, `timeout_seconds`, `max_retries`, `system_instruction`). An empty `api_key` uses `GEMINI_API_KEY` or `GOOGLE_API_KEY`. The command can be blocked with `bc +ai`.
+
+### 🛠️ Fixed: Long Messages Were Sent Empty
+- **🔎 Why:** `split()` in `bot/TeamTalk/__init__.py` compared (`==`) instead of assigning, so every word of a line longer than one message was dropped and empty messages were sent. Any answer that is one long paragraph would have disappeared.
+- **✅ Now:** a long line is cut on its spaces, a word longer than a message is cut inside the word, lines that fit are kept together, and no empty message is sent.
+
+### 🔄 Improved: `config.json` Is Updated Like an App Keeps Your Settings
+- **➕ Only adds:** at every start the bot compares `config.json` with the settings the running version knows and adds what is missing, at any depth, with its default value. Values, lists and extra keys of the user are never changed; nothing is reset.
+- **💾 Safe:** the file is copied to `config.json.bak` before it is changed, it is written only when something was added, and a file that cannot be written does not stop the bot (the missing settings take their defaults anyway). A `config_version` that is higher than the bot knows, or invalid, stops the start with a clear message.
+- **🔁 For changes that are not "add":** a setting that is renamed or changed gets a small function in `bot/migrators/config_migrator.py` (`migrate_functs`), and `CONFIG_VERSION` in `bot/config/models.py` is raised. Version 2 is this release. The missing `config_version` is no longer lost (the old code computed it and discarded it), and the circular import between the config and the migrator is gone.
+- **📣 Reported:** a `[Config]` log line, and the channel is told how many settings were added after the restart.
+
+### 🔄 Improved: The Restart After an Update Behaves Like an App or OS Update
+- **📦 Packages are installed during the restart:** when an update changes `requirements.txt`, `install` now restarts the bot, and `tools/apply_update.py` runs `pip install -r requirements.txt` first thing in the new process, before the bot loads any package (on Windows a loaded package cannot be replaced). Before, the bot installed the update but did not restart and an administrator had to run pip. A failure (no internet, for instance) never stops the bot: it starts, tells the channel what went wrong and how to do it by hand, and the step is never repeated by itself.
+- **📣 "What changed" message:** after the restart the bot says "TTMediaBot was updated from version X to version Y", and how many new settings were added to the configuration. The `update_success` file now carries the version that was running (the old text `ok` is still understood).
+- **ℹ️** The very first jump from 4.1 to 4.1.2 is installed by the old code, which still asks for `pip install -r requirements.txt` and `rs` by hand (the new package `google-genai` is needed). From 4.1.2 on the update takes care of it.
+
+### 🌍 Improved: Indonesian Translation (`id`)
+- **📖 Rewritten as a whole,** with the wording of Android and One UI instead of word by word. One glossary is used everywhere: *saluran* (channel), *lagu* (track), *daftar putar* (playlist), *antrean* (queue), *tautan* (link), *unduh/unggah* (download/upload), *pasang* (install), *mulai ulang* (restart), *diblokir* (banned/blocked), *pengguna tamu* (guest). "Query" is now *kata kunci*, "event" is *peristiwa*, "voice transmission" is *transmisi suara*, "You are banned" no longer says *dilarang* (forbidden).
+- **🐞 Defects removed:** the `GENDER` help text was two texts glued together, "aktifasi" and "fertikal" were misspelled, "Tampa" and "Bahasa ubah bahasa bot" were wrong, the translation of the mode list used `{mode}` instead of `{modes}` (the command failed with an error), and one entry was marked fuzzy and so was never used. All 244 messages are now translated, including the update, fade-out and AI messages.
+- **🇭🇺 Hungarian:** "Playing {}" and "Unknown service.\n{}" had lost the `{}` and hid the track name and the service list; restored.
+- **🔒 Guard:** `tests/test_locales.py` fails when a translation changes the placeholders of its source, when a `.mo` is older than its `.po`, or when Indonesian has an untranslated or fuzzy message. The other languages keep their translations; the new messages appear in English there until they are translated.
+
+### 🧪 Tests: One Folder
+- **📁 Moved:** all `test_*.py` files left the root of the repository and are in `tests/` (with the existing `tests/deployment/`). Two of them found the repository by their own location and were adjusted. Run them with `python -m unittest discover -s tests -t . -v`, or one file with `python -m unittest tests.test_updater -v`.
+- **🧩 `test_updater.py`:** adapted to the new behavior (packages installed during the restart; the marker names the running version) and no longer depends on the version number written in the code.
+- **🆕 New:** `test_ai_gemini.py` (requests, grounding sources, retries, timeouts, every error class, a rejected thinking level, a lost conversation; a fake client replaces the SDK), `test_ai_manager.py`, `test_ai_commands.py` (the commands and the routing of messages inside a chat), `test_ai_text.py`, `test_split_message.py`, `test_config_migrator.py`, `test_update_state.py` and `test_locales.py`.
+
+### 🔖 Version
+- Raised to **4.1.2** (`bot/app_vars.py`). `README.md` and `README_WINDOWS.md` describe the AI feature, its settings, the config update, the restart-time package installation and the tests; the minimum Python version is now 3.10 (`install_windows.bat`).
+
+### 📁 Files Changed
+- **New:** `bot/ai/` (`__init__.py`, `errors.py`, `gemini.py`, `manager.py`, `provider.py`, `text.py`), `bot/migrators/config_merge.py`, `bot/update_state.py`, `tools/apply_update.py`, `tests/__init__.py`, `tests/test_ai_commands.py`, `tests/test_ai_gemini.py`, `tests/test_ai_manager.py`, `tests/test_ai_text.py`, `tests/test_config_migrator.py`, `tests/test_locales.py`, `tests/test_split_message.py`, `tests/test_update_state.py`.
+- **Moved to `tests/`:** `test_fade_out.py`, `test_ffmpeg_engine.py`, `test_logger_early_logging.py`, `test_player_http_headers.py`, `test_player_stream_retry.py`, `test_stream_resolvers.py`, `test_track_refresh.py`, `test_update_shared_youtube.py`, `test_updater.py`, `test_youtube_bridge.py`, `test_ytm_service.py`.
+- **Changed:** `TTMediaBot.py`, `bot/__init__.py`, `bot/app_vars.py`, `bot/commands/__init__.py`, `bot/commands/user_commands.py`, `bot/commands/admin_commands.py`, `bot/config/__init__.py`, `bot/config/models.py`, `bot/migrators/config_migrator.py`, `bot/TeamTalk/__init__.py`, `bot/updater.py`, `config.json`, `config_default.json`, `requirements.txt`, `.gitignore`, `install_windows.bat`, `README.md`, `README_WINDOWS.md`, `locale/` (`TTMediaBot.pot`, and `.po`/`.mo` of every language), `CHANGELOG.md`.
+
+---
+
+## 🐍 Windows Port — Version 4.2.0: Python 3.15 Support, Python Installed Through winget, Optional PO-Token Provider Step, UTF-8 Everywhere *(10/17/2026)*
+
+> **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
+
+> A large update: the way the bot is installed and started changes for the new Python, and the SDK download becomes more robust. Python 3.15.0 was released on 9 October 2026. The bot is now optimized for it and still runs on Python 3.10 or newer. No feature was removed and the behavior of the features that already worked is unchanged.
+
+### 🐍 New: Python 3.15
+- **✅ Supported:** the bot, the installer and the helper tools run on Python 3.15 and keep running on 3.10, 3.11, 3.12, 3.13 and 3.14. The minimum stays Python 3.10 (`google-genai` and recent `pydantic` need it).
+- **📦 Libraries:** `pydantic` (through `pydantic-core`) and `numpy` publish Windows wheels for Python 3.15, so `pip` installs them without a compiler. `requirements.txt` is unchanged and does not pin versions.
+- **🔤 UTF-8 by default (PEP 686):** Python 3.15 reads and writes text as UTF-8 when no encoding is given; older versions on Windows used the code page. The bot already names `encoding="utf-8"` for every text file it opens, reads and writes, and for every program it runs; a new test (`tests/test_python_compat.py`) keeps it that way. `TTMediaBot.bat` and `install_windows.bat` also set `PYTHONUTF8=1` (unless you set it yourself), so Python 3.10 to 3.14 behave like 3.15 for song titles and for libraries that open files without naming an encoding.
+- **🧩 Removed in 3.15: `load_module()`:** the event handlers (`event_handling`) were loaded with `SourceFileLoader(...).load_module()`, deprecated since Python 3.6 and on the removal list of Python 3.15. They are now loaded with `importlib.util.spec_from_file_location` and `exec_module` (the new `load_python_module()` in `bot/utils.py`), which works on every supported version. A single `.py` file and a folder with `__init__.py` are both loaded, a handler that raises an error does not stay half-loaded in `sys.modules`, and the bot's answer to a broken handler file (an empty module and an error in the log) is the same as before.
+- **🧹 pydantic 2 without warnings:** the settings are written with `model_dump()` when the installed `pydantic` has it (the new `dump_model()` in `bot/config/__init__.py`) and with `dict()` on pydantic 1. The result is identical; the deprecation warning of pydantic 2 is gone.
+- **⚡ Lazy imports (PEP 810):** `bot/modules/stream_resolvers.py` declares `__lazy_modules__ = ["bs4"]`, so Python 3.15 loads BeautifulSoup only when a web page has to be read. Older versions read the line as a plain list and import it at once, as before. The code never uses the `lazy` keyword, so every file still compiles on Python 3.10.
+- **🛡️ Clear message on an old Python:** `TTMediaBot.py` checks the version first. Python 3.9 or older now gets "TTMediaBot needs Python 3.10 or newer (it is optimized for Python 3.15)…" instead of an error deep inside a library.
+
+### 🪟 Changed: `install_windows.bat`
+- **🐍 Python:** the installer looks for Python 3.15 first (`py -V:3.15`, `py -3.15`), then for any 64-bit Python 3.10 or newer (`py -3`, `python`). An old Python that works is kept. Before, only the existence of a command was checked, never its version or its bitness.
+- **⬇️ Python 3.15 is installed when there is none:** through the Python install manager, the way Python for Windows is delivered now: `winget install 9NQ7512CXL7T --accept-package-agreements` (with `--accept-source-agreements`, so winget does not stop to ask), then `pymanager install --configure -y` and `pymanager install -y 3.15`. The Windows search path is updated only for windows opened afterwards, so when the new Python is not visible yet the installer says "close this window, open a new one and run it again" instead of failing in a confusing way. Without winget it prints the two commands to run by hand. The installer also prints the Python and the `venv` version it uses, and tells you how to move an older `venv` to 3.15.
+- **❓ Step 4 asks first:** "Install and start the PO token provider for this bot? [Y/n]" (type the letter, then Enter). **`N` (or `no`) skips step 4 (install) and step 5 (the second window) completely.** One PO-token provider listening on port `4416` is enough for any number of bots on the same computer, so a second bot no longer installs and starts a provider again. When something already answers on port `4416` the installer says so and the default becomes `N` (Enter alone skips); otherwise Enter alone means `Y`. Any other answer is asked again.
+- **🤖 Without questions:** `install_windows.bat --pot` installs and starts the provider, `install_windows.bat --no-pot` skips steps 4 and 5.
+- **🔧 Fixes inside the script:** a first-run question of the Python launcher can no longer wait invisibly for a key press, and every Python one-liner was checked for batch escape characters that would reach Python.
+
+### 📦 Changed: TeamTalk SDK download, 7-Zip and browser identities (`tools/setup_deps.py`)
+- **🌐 Fresh browser identities:** the downloads used one fixed "TTMediaBot-setup" identity, and a `403` from the site ended the download at once. The identities now come from the new `tools/user_agents.txt` (62 current browser identities, one per line, `#` comments allowed; the built-in fallback list is used when the file is missing or empty). One is chosen at random per run; a site that answers `403`, `406` or `429` is asked again at once with the next one (at most 6), and the identity that worked is used first for the rest of the run. `404` and server errors behave as before.
+- **🗜️ 7-Zip:** unchanged first: 7-Zip when installed, py7zr, `tar.exe`, then the installation of 7-Zip through the package manager (winget `7zip.7zip` on Windows). New last resort on Windows: when winget is missing or fails, the portable `7zr.exe` (7-Zip's console program for `.7z`, from 7-zip.org with the GitHub release as a second address) is downloaded into the temporary folder and used for the unpacking. It is only used when it is a Windows program of a plausible size that identifies itself as 7-Zip. Nothing is installed by that step.
+- **🗂️ Temporary files only:** the `.7z` and the unpacked SDK live in a temporary folder in the user's Windows `Temp` folder and are deleted afterwards (even when a file is still held by antivirus software); only `TeamTalk5.dll` stays in the bot folder, the previous one as `TeamTalk5.dll.bak`. `Library\TeamTalk_DLL` of the SDK holds `TeamTalk5.dll`, `TeamTalk5.lib` and a C header; the documentation names the DLL as the only file needed at run time, so `.lib` and the header are not kept. Any other DLL found in that folder is copied with it.
+- **✅ The copy is tested where it will live:** on Windows the DLL is test-loaded again from the bot folder after copying. When it does not load there (for example because a DLL it needs was left in the SDK folder), the previous files are put back, nothing half-installed stays, and the reason and the manual steps are printed.
+- **📝 Manual steps with commands:** when the automatic setup cannot finish, the message now lists the exact commands: `7z x -y -o"%TEMP%\ttsdk" tt5sdk_*_win64.7z`, `copy ... TeamTalk5.dll <bot folder>`, `dir /s /b ...` to find the file, and `rmdir /s /q "%TEMP%\ttsdk"`.
+- **🪟 `install_windows.bat` step 6** says what will happen with the SDK archive and 7-Zip.
+
+### 📖 Documentation
+- `README.md` and `README_WINDOWS.md`: Python 3.15 is the recommended version, the two winget/`py install` commands, the step 4 question and why it exists, `--pot` and `--no-pot`, how to move an existing `venv` to 3.15, the new troubleshooting text for "Python was not found", and the SDK / 7-Zip / `tools\user_agents.txt` description with the manual commands.
+
+### 🧪 Tests
+- **🆕 `tests/test_python_compat.py`** (27 tests): every project file parses as Python 3.10 syntax and the `lazy` keyword is not used; no module removed from the standard library is imported and no deprecated or removed call (`load_module`, `utcnow`, `getdefaultlocale`, `glob0`, `SetPointerType`, …) is used; every `open()`, `read_text()`, `write_text()` and text-mode `subprocess` call names its encoding; `__lazy_modules__` is well formed and comes before the imports it makes lazy; `load_python_module()` loads a file, a package, non-ASCII content, a missing file and a broken file; `dump_model()` prefers `model_dump()`; the Python version guard answers Python 3.9 and lets 3.10 to 3.15 pass; `install_windows.bat` and `TTMediaBot.bat` use Windows line endings only, every `goto` and `call` has its label, one-liners have no batch escapes, step 4 is a question whose `N` branch skips steps 4 and 5, and the winget command is the official one; the changelog names the running version.
+- **🆕 `tests/test_setup_deps_downloads.py`** (42 tests): the identity list (shipped file, comments, fallback), rotation on `403`/`406`/`429` with a real local HTTP server and with fake openers, the remembered identity, `404`/`5xx` staying final, the portable 7zr.exe (addresses, size and name checks, nothing downloaded on Linux or in check-only runs, package manager first), companion DLLs, the roll-back, the temporary folder being deleted, and the exact manual commands.
+- The suite now has 349 tests; run everything with `python -m unittest discover -s tests -t .`.
+
+### 🔖 Version
+- Raised to **4.2.0** (`bot/app_vars.py`). `config.json` needs no change: no setting was added, so `CONFIG_VERSION` stays 2.
+
+### 📁 Files Changed
+- **New:** `tests/test_python_compat.py`, `tests/test_setup_deps_downloads.py`, `tools/user_agents.txt`.
+- **Changed:** `tools/setup_deps.py`, `bot/app_vars.py`, `bot/utils.py`, `bot/TeamTalk/thread.py`, `bot/config/__init__.py`, `bot/modules/stream_resolvers.py`, `TTMediaBot.py`, `TTMediaBot.bat`, `install_windows.bat`, `README.md`, `README_WINDOWS.md`, `README_DEVELOPERS_AI.md`, `CHANGELOG.md`.

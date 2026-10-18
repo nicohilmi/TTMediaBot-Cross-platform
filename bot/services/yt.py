@@ -14,6 +14,7 @@ from bot.config.models import YtModel
 from bot.player.enums import TrackType
 from bot.player.track import Track
 from bot.services import Service as _Service
+from bot.services.result_filter import looks_like_collection, pick_single_track_index
 from bot.services.youtube_bridge import YouTubeBridge
 from bot import errors
 
@@ -349,7 +350,30 @@ class YtService(_Service):
     def _fetch_autoplay_async(self, video_id: str) -> None:
          threading.Thread(target=self._fetch_autoplay_sync, args=(video_id,), daemon=True, name=f"Autoplay_{video_id}").start()
 
+    # Autoplay is fetched from several places at once (search and the "few tracks
+    # left" check in get). Without this, each fetch merged the same recommendations
+    # into the queue, which then held every song two or three times.
+    _autoplay_lock = threading.Lock()
+    _autoplay_inflight: set = set()
+
     def _fetch_autoplay_sync(self, video_id: str) -> bool:
+        with self._autoplay_lock:
+            if video_id in self._autoplay_inflight:
+                logging.debug(f"[YT] Autoplay fetch for {video_id} is already running")
+                return False
+            self._autoplay_inflight.add(video_id)
+        try:
+            # One merge at a time: the duplicate check reads the list that the
+            # previous fetch has just extended.
+            with self._autoplay_merge_lock:
+                return self._fetch_autoplay_unlocked(video_id)
+        finally:
+            with self._autoplay_lock:
+                self._autoplay_inflight.discard(video_id)
+
+    _autoplay_merge_lock = threading.Lock()
+
+    def _fetch_autoplay_unlocked(self, video_id: str) -> bool:
          try:
               logging.info(f"[YT] Fetching continuous recommendations for {video_id}")
               recs: List[Track] = []
@@ -426,6 +450,7 @@ class YtService(_Service):
         start_time = time.perf_counter()
         try:
             entries = self._bridge.search(query, limit).get("entries", [])
+            entries = self._prefer_single_track(query, limit, entries)
             tracks = []
             for video in entries:
                 if not video.get("webpage_url") and not video.get("stream_url"):
@@ -465,6 +490,29 @@ class YtService(_Service):
             duration = (time.perf_counter() - start_time) * 1000
             logging.info(f"YT Search (YouTube.js) finished in {duration:.2f}ms for query: {query}")
             return tracks
+        except errors.NothingFoundError:
+            raise
         except Exception as e:
+            # A bridge or network failure is not "nothing found"; say what failed.
             logging.error(f"YT Search failed: {e}")
-            raise errors.NothingFoundError("")
+            raise errors.ServiceError(f"YouTube search failed: {e}") from e
+
+    def _prefer_single_track(self, query: str, limit: int, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """When one song is wanted, do not play a FULL ALBUM or non stop upload."""
+        if limit != 1 or len(entries) != 1:
+            return entries
+        if not looks_like_collection(entries[0].get("title") or "") or looks_like_collection(query):
+            return entries
+        try:
+            more = self._bridge.search(query, 8).get("entries", [])
+        except Exception as e:
+            logging.debug(f"[YT] Second search for a single track failed: {e}")
+            return entries
+        if not more:
+            return entries
+        index = pick_single_track_index(query, [item.get("title") or "" for item in more])
+        logging.info(
+            f"[YT] Top result {entries[0].get('title')!r} is a multi-song upload; "
+            f"playing {more[index].get('title')!r} instead"
+        )
+        return [more[index]]

@@ -1,8 +1,39 @@
+import sys
+
+if sys.version_info < (3, 10):
+    sys.exit(
+        "TTMediaBot needs Python 3.10 or newer (it is optimized for Python 3.15). "
+        "This is Python {}.{}.{}. Install a newer Python, delete the venv folder and "
+        "run install_windows.bat (Windows) or install.sh (Linux) again.".format(
+            *sys.version_info[:3]
+        )
+    )
+
 from typing import Optional
 
 from os import path
 
 from argparse import ArgumentParser
+
+
+def _finish_pending_update() -> None:
+    """Runs what the last update asked for (see tools/apply_update.py) before the
+    bot and its packages are loaded. It can never keep the bot from starting."""
+    try:
+        import importlib.util
+
+        script = path.join(path.dirname(path.abspath(__file__)), "tools", "apply_update.py")
+        if not path.isfile(script):
+            return
+        spec = importlib.util.spec_from_file_location("ttbot_apply_update", script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.run_pending()
+    except Exception as error:
+        print("Could not finish the update steps:", error)
+
+
+_finish_pending_update()
 
 from bot import Bot, app_vars, ffmpeg_locator, logger
 from bot.config import save_default_file

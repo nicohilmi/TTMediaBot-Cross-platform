@@ -111,8 +111,53 @@ class UpdaterModel(BaseModel):
     remote: str = "origin"
 
 
+class GeminiModel(BaseModel):
+    # Create a key at https://aistudio.google.com/apikey. When it is left empty the
+    # GEMINI_API_KEY (or GOOGLE_API_KEY) environment variable is used instead.
+    api_key: str = ""
+    # Google renames and retires models from time to time; the current names are
+    # listed at https://ai.google.dev/gemini-api/docs/models
+    model: str = "gemini-3.8-flash"
+    # Answer with up-to-date information found by Google Search ("grounding").
+    google_search: bool = True
+    # How long the model thinks before it answers: "low" (fastest), "medium" or
+    # "high". Leave it empty to use the default of the model.
+    thinking_level: str = "low"
+    # Seconds to wait for Google before one request is given up.
+    timeout_seconds: float = 60.0
+    # How many times a request is repeated when Google is busy or the network fails.
+    max_retries: int = 2
+    # Extra instructions that shape every answer. Empty uses the built-in ones.
+    system_instruction: str = ""
+
+
+class AIModel(BaseModel):
+    # Users type "ai QUESTION" to ask, or "chat" to hold a conversation.
+    enabled: bool = True
+    # The service that answers. Only "gemini" exists for now.
+    provider: str = "gemini"
+    # Seconds a user has to wait between two questions.
+    cooldown_seconds: float = 2.0
+    # The longest question accepted, in characters (0 = no limit).
+    max_question_length: int = 2000
+    # The longest answer sent, in characters; a longer one is cut (0 = no limit).
+    max_answer_length: int = 1500
+    # Name the websites an answer found with Google Search is based on.
+    show_sources: bool = True
+    # A chat ends by itself after this many minutes without a message (0 = never).
+    chat_idle_minutes: int = 30
+    # Questions that are answered at the same time, over all users.
+    max_concurrent_requests: int = 3
+    gemini: GeminiModel = GeminiModel()
+
+
+# Raised whenever config.json gets a new layout that needs more than adding the
+# missing settings (see bot/migrators/config_migrator.py).
+CONFIG_VERSION = 2
+
+
 class ConfigModel(BaseModel):
-    config_version: int = 0
+    config_version: int = CONFIG_VERSION
     general: GeneralModel = GeneralModel()
     player: PlayerModel = PlayerModel()
     teamtalk: TeamTalkModel = TeamTalkModel()
@@ -120,3 +165,4 @@ class ConfigModel(BaseModel):
     logger: LoggerModel = LoggerModel()
     shortening: ShorteningModel = ShorteningModel()
     updater: UpdaterModel = UpdaterModel()
+    ai: AIModel = AIModel()

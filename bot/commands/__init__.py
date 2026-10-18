@@ -80,6 +80,9 @@ class CommandProcessor:
             "rd": user_commands.RemoveLinkCommand,
             "ldd": user_commands.DownloadDirectCommand,
             "adsc": user_commands.ToggleLocalDownloadCommand,
+            # --- AI ---
+            "ai": user_commands.AICommand,
+            "chat": user_commands.ChatCommand,
         }
         self.admin_commands_dict = {
             "cg": admin_commands.ChangeGenderCommand,
@@ -113,6 +116,7 @@ class CommandProcessor:
 
     def _run(self, message: Message) -> None:
         try:
+            chat_message = False
             if message.user.id in self.pending_playlist_download:
                 command_name = "dlp"
                 arg = message.text
@@ -121,12 +125,20 @@ class CommandProcessor:
                 command_name = "ads"
                 arg = message.text
                 del self.pending_ads_option[message.user.id]
+            elif self._is_chat_message(message.user):
+                # Everything a user in a chat with the AI sends is for the AI.
+                command_name = "chat"
+                arg = message.text
+                chat_message = True
             else:
                 command_name, arg = self.parse_command(message.text)
             
             logging.info(f"Executing command '{command_name}' with args '{arg}' from user {message.user.username}")
             if self.check_access(message.user, command_name):
-                command_class = self.get_command(command_name, message.user)
+                if chat_message:
+                    command_class = user_commands.AIChatMessageCommand
+                else:
+                    command_class = self.get_command(command_name, message.user)
                 command = command_class(self)
                 self.current_command_id = id(command)
                 result = command(arg, message.user)
@@ -173,6 +185,16 @@ class CommandProcessor:
                 self.translator.translate("Error: {}").format(str(e)),
                 message.user,
             )
+
+    def _is_chat_message(self, user: User) -> bool:
+        manager = self.bot.ai_manager
+        if not manager.is_chatting(user):
+            return False
+        if user.channel.id != self.ttclient.channel.id:
+            # Someone who left the bot's channel is no longer talking to the bot.
+            manager.end_chat(user)
+            return False
+        return True
 
     def check_access(self, user: User, command: str) -> bool:
         if (

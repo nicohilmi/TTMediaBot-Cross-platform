@@ -21,7 +21,9 @@ from contextlib import redirect_stderr
 from types import SimpleNamespace
 from unittest import TestCase
 
-LOGGER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bot", "logger.py")
+LOGGER_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bot", "logger.py"
+)
 
 
 def load_logger_module():

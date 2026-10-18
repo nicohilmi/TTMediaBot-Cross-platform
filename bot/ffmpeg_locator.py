@@ -12,6 +12,7 @@ The result is cached, so the (cheap) probing happens once per process.
 
 from __future__ import annotations
 
+import glob
 import logging
 import os
 import shutil
@@ -19,7 +20,7 @@ import stat
 import subprocess
 import sys
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from bot import app_vars
 
@@ -81,6 +82,28 @@ def probe_version(path: str) -> Optional[str]:
     return output.splitlines()[0] if output else None
 
 
+def windows_package_manager_candidates(env: Optional[Mapping[str, str]] = None) -> List[str]:
+    """ffmpeg.exe files that winget, Chocolatey or Scoop installed.
+
+    A Command Prompt opened before the install does not have them on PATH yet, so
+    the bot (started from that window) would say FFmpeg is missing although it is there.
+    """
+    env = os.environ if env is None else env
+    local = env.get("LOCALAPPDATA", "")
+    program_files = env.get("ProgramFiles", "")
+    program_data = env.get("ProgramData", "")
+    found: List[str] = []
+    if local:
+        found.append(os.path.join(local, "Microsoft", "WinGet", "Links", "ffmpeg.exe"))
+        found += sorted(glob.glob(os.path.join(local, "Microsoft", "WinGet", "Packages", "Gyan.FFmpeg*", "**", "bin", "ffmpeg.exe"), recursive=True))
+    if program_files:
+        found += sorted(glob.glob(os.path.join(program_files, "WinGet", "Packages", "Gyan.FFmpeg*", "**", "bin", "ffmpeg.exe"), recursive=True))
+    if program_data:
+        found.append(os.path.join(program_data, "chocolatey", "bin", "ffmpeg.exe"))
+    found.append(os.path.join(os.path.expanduser("~"), "scoop", "shims", "ffmpeg.exe"))
+    return [path for path in found if os.path.isfile(path)]
+
+
 def _candidates(configured: str) -> List[str]:
     candidates: List[str] = []
     configured = (configured or "").strip()
@@ -95,6 +118,8 @@ def _candidates(configured: str) -> List[str]:
     system_path = shutil.which("ffmpeg")
     if system_path:
         candidates.append(system_path)
+    if IS_WINDOWS:
+        candidates.extend(windows_package_manager_candidates())
     return candidates
 
 

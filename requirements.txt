@@ -7,3 +7,4 @@ pydantic
 pyshorteners
 requests
 httpx[http2]
+google-genai>=2.16.0,<3

@@ -49,6 +49,21 @@ SINK_LEAD_SECONDS = 0.12
 PREBUFFER_FRAMES = 10
 # Silence (stalled network) longer than this releases the sink.
 UNDERRUN_RELEASE_SECONDS = 1.0
+# A frame that reaches the sink later than this behind schedule is an audible
+# stutter on the receiving side (the sink gets a burst after a gap).
+LATE_FRAME_THRESHOLD_SECONDS = 0.06
+# After an underrun, wait for this long at most to rebuild the prebuffer, instead
+# of resuming with one frame in hand and stalling again on the next one.
+REBUFFER_MAX_SECONDS = 2.0
+# Stall warnings from one stream are spaced out at least this much.
+STALL_LOG_INTERVAL_SECONDS = 5.0
+# ffmpeg stderr lines that explain a stall (reconnects, resets, timeouts).
+_NETWORK_NOTICE_RE = re.compile(
+    r"reconnect|connection (?:reset|timed out|refused)|operation timed out"
+    r"|http error|server returned|error in the pull|input/output error",
+    re.IGNORECASE,
+)
+MAX_NETWORK_NOTICES_PER_STREAM = 20
 # A fade-out falls by a fixed number of dB, i.e. along a straight line on the dB
 # scale. Hearing is roughly logarithmic, so that sounds like an even, steady fade;
 # a straight ramp of the amplitude seems to drop early and then linger.
@@ -199,6 +214,13 @@ class _Session:
         self.metadata: Dict[str, str] = {}
         self.stderr_tail: Deque[str] = deque(maxlen=40)
         self.audio_started = False
+        # Stall statistics, logged because a stutter would otherwise leave no trace.
+        self.underruns = 0
+        self.underrun_seconds = 0.0
+        self.late_frames = 0
+        self.max_late = 0.0
+        self.last_late_log = 0.0
+        self.network_notices = 0
         self.threads: List[threading.Thread] = []
         self.pump_thread: Optional[threading.Thread] = None
 
@@ -269,6 +291,7 @@ class FFmpegEngine:
         self._sink_lock = threading.Lock()
         self._sink_open = False
         self._sink_failing = False
+        self._dropped_frames = 0
         self._sink_last_warning = 0.0
         self._sink_exceptions = 0
         self._closed = False
@@ -606,6 +629,12 @@ class FFmpegEngine:
                 if not line.strip():
                     continue
                 session.stderr_tail.append(line)
+                if (
+                    session.network_notices < MAX_NETWORK_NOTICES_PER_STREAM
+                    and _NETWORK_NOTICE_RE.search(line)
+                ):
+                    session.network_notices += 1
+                    logging.warning(f"[FFmpeg] Stream notice: {line.strip()[:300]}")
                 if line.startswith("Input #0"):
                     in_input, in_metadata = True, False
                     continue
@@ -702,6 +731,7 @@ class FFmpegEngine:
         base: Optional[float] = None
         sent_since_base = 0
         last_data = time.monotonic()
+        underrun_since: Optional[float] = None
         while not session.cancelled.is_set():
             if not self._run_event.is_set():
                 self._close_sink()
@@ -715,17 +745,26 @@ class FFmpegEngine:
                 frame = session.buffer.get(timeout=0.1)
             except queue.Empty:
                 base = None
+                if underrun_since is None and session.returncode is None:
+                    underrun_since = last_data
                 if time.monotonic() - last_data > UNDERRUN_RELEASE_SECONDS:
                     self._close_sink()
                 continue
             if frame is None:
                 break
             last_data = time.monotonic()
+            if underrun_since is not None:
+                self._note_underrun(session, last_data - underrun_since)
+                underrun_since = None
+                self._rebuffer(session)
+                last_data = time.monotonic()
             now = time.monotonic()
             if base is None:
                 base, sent_since_base = now, 0
             due = base + sent_since_base * FRAME_SECONDS - SINK_LEAD_SECONDS
             delay = due - now
+            if delay < -LATE_FRAME_THRESHOLD_SECONDS:
+                self._note_late_frame(session, -delay)
             if delay > 0:
                 if session.cancelled.wait(delay):
                     return
@@ -747,9 +786,50 @@ class FFmpegEngine:
                 self._emit("playback-restart")
         self._finish(session)
 
+    @staticmethod
+    def _note_underrun(session: _Session, stalled: float) -> None:
+        session.underruns += 1
+        session.underrun_seconds += stalled
+        if session.underruns <= 10 or session.underruns % 10 == 0:
+            logging.warning(
+                f"[FFmpeg] Audio underrun #{session.underruns}: no decoded audio for "
+                f"{stalled:.2f} s at {session.position:.1f} s into the track. ffmpeg was not "
+                "delivering audio fast enough, usually a slow or unstable connection to the stream."
+            )
+
+    @staticmethod
+    def _note_late_frame(session: _Session, lateness: float) -> None:
+        session.late_frames += 1
+        session.max_late = max(session.max_late, lateness)
+        now = time.monotonic()
+        if now - session.last_late_log >= STALL_LOG_INTERVAL_SECONDS:
+            session.last_late_log = now
+            logging.warning(
+                f"[FFmpeg] Audio is reaching the sink late: {session.late_frames} late frames "
+                f"so far (worst {session.max_late * 1000:.0f} ms) at {session.position:.1f} s into the track."
+            )
+
+    @staticmethod
+    def _rebuffer(session: _Session) -> None:
+        """Refill the prebuffer after an underrun before playing on."""
+        deadline = time.monotonic() + REBUFFER_MAX_SECONDS
+        while (
+            session.buffer.qsize() < PREBUFFER_FRAMES
+            and session.returncode is None
+            and not session.cancelled.is_set()
+            and time.monotonic() < deadline
+        ):
+            time.sleep(0.01)
+
     def _finish(self, session: _Session) -> None:
         if session.cancelled.is_set():
             return
+        if session.underruns or session.late_frames:
+            logging.info(
+                f"[FFmpeg] Stall summary: {session.underruns} underruns "
+                f"({session.underrun_seconds:.2f} s without audio), {session.late_frames} late frames "
+                f"(worst {session.max_late * 1000:.0f} ms), {self._dropped_frames} frames dropped by the sink so far."
+            )
         with self._lock:
             if self._session is not session:
                 return
@@ -789,12 +869,13 @@ class FFmpegEngine:
                 self._sink_failing = False
                 return
             self._sink_failing = True
+            self._dropped_frames += 1
             now = time.monotonic()
             if now - self._sink_last_warning > 30:
                 self._sink_last_warning = now
                 logging.warning(
                     "[FFmpeg] The audio sink refused audio (not connected to a channel "
-                    "or no permission to transmit voice?). Audio is being dropped."
+                    f"or no permission to transmit voice?). Audio is being dropped ({self._dropped_frames} frames so far)."
                 )
 
     def _close_sink(self) -> None:

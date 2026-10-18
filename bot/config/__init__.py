@@ -4,7 +4,7 @@ import sys
 from typing import Any, Dict, Optional
 
 from bot import app_vars, utils
-from bot.config.models import ConfigModel
+from bot.config.models import CONFIG_VERSION, ConfigModel
 from bot.migrators import config_migrator
 
 import portalocker
@@ -12,15 +12,30 @@ import portalocker
 config_data_type = Dict[str, Any]
 
 
+def dump_model(model: Any) -> config_data_type:
+    """The settings of a model as a plain dictionary, on pydantic 1 and 2 alike.
+
+    ``BaseModel.dict()`` still works in pydantic 2 but is deprecated there (it prints
+    a warning); ``model_dump()`` is the current name.
+    """
+    model_dump = getattr(model, "model_dump", None)
+    if callable(model_dump):
+        return model_dump()
+    return model.dict()
+
+
 def save_default_file() -> None:
-    with open(utils.get_abs_path("config_default.json"), "w") as f:
-        json.dump(ConfigModel().dict(), f, indent=4, ensure_ascii=False)
+    with open(utils.get_abs_path("config_default.json"), "w", encoding="UTF-8") as f:
+        json.dump(dump_model(ConfigModel()), f, indent=4, ensure_ascii=False)
 
 
 class ConfigManager:
-    version = 1
+    version = CONFIG_VERSION
 
     def __init__(self, file_name: Optional[str]) -> None:
+        # What the update of config.json did at this start (None without a file);
+        # see bot/migrators/config_migrator.py.
+        self.migration = None
         if file_name:
             if os.path.isfile(file_name):
                 self.file_name = os.path.abspath(file_name)
@@ -33,6 +48,10 @@ class ConfigManager:
             self.config_dir = app_vars.directory
             config_dict = {}
         self.config: ConfigModel = ConfigModel(**config_dict)
+
+    def default_data(self) -> config_data_type:
+        """Every setting with its default value, in the order of the model."""
+        return dump_model(ConfigModel())
 
     def _dump(self, data: config_data_type):
         with open(self.file_name, "w", encoding="UTF-8") as f:
@@ -61,5 +80,5 @@ class ConfigManager:
 
     def save(self):
         self.file_locker.release()
-        self._dump(self.config.dict())
+        self._dump(dump_model(self.config))
         self.file_locker.acquire()

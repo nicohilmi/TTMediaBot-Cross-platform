@@ -1,5 +1,5 @@
 {
-    "config_version": 0,
+    "config_version": 2,
     "general": {
         "language": "en",
         "send_channel_messages": true,
@@ -7,7 +7,8 @@
         "blocked_commands": [],
         "delete_uploaded_files_after": 300,
         "time_format": "%H:%M",
-        "start_commands": []
+        "start_commands": [],
+        "search_results_mode": false
     },
     "player": {
         "default_volume": 50,
@@ -79,5 +80,24 @@
         "enabled": true,
         "check_interval_minutes": 60,
         "remote": "origin"
+    },
+    "ai": {
+        "enabled": true,
+        "provider": "gemini",
+        "cooldown_seconds": 2.0,
+        "max_question_length": 2000,
+        "max_answer_length": 1500,
+        "show_sources": true,
+        "chat_idle_minutes": 30,
+        "max_concurrent_requests": 3,
+        "gemini": {
+            "api_key": "",
+            "model": "gemini-3.8-flash",
+            "google_search": true,
+            "thinking_level": "low",
+            "timeout_seconds": 60.0,
+            "max_retries": 2,
+            "system_instruction": ""
+        }
     }
 }

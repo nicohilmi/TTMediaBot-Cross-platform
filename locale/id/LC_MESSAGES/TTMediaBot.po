@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TTMediaBot VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-16 13:42+0000\n"
+"POT-Creation-Date: 2026-10-12 08:13+0000\n"
 "PO-Revision-Date: 2022-04-15 20:17+0700\n"
 "Last-Translator: \n"
 "Language: id_ID\n"
@@ -16,507 +16,722 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
 
-#: /home/admin/joao/TTMediaBot/bot/__init__.py:121
-msgid "Update completed successfully! I am back online."
-msgstr "Pembaruan berhasil diselesaikan! Saya kembali online."
-
-#: /home/admin/joao/TTMediaBot/bot/__init__.py:157
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/__init__.py:186
 msgid ""
 "The bot is starting an update process and will restart shortly. It may go"
 " offline at any moment."
 msgstr ""
 "Bot sedang memulai proses pembaruan dan akan segera dimulai ulang. Bot "
-"dapat offline kapan saja."
+"bisa offline sewaktu-waktu."
 
-#: /home/admin/joao/TTMediaBot/bot/__init__.py:189
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/__init__.py:216
+#, python-brace-format
+msgid ""
+"The Python packages of the update could not be installed: {error}. Run "
+"pip install -r requirements.txt on the bot's computer, then send rs to "
+"restart the bot."
+msgstr ""
+"Paket Python untuk pembaruan ini tidak dapat dipasang: {error}. Jalankan "
+"pip install -r requirements.txt di komputer bot, lalu kirim rs untuk "
+"memulai ulang bot."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/__init__.py:249
 msgid "The bot is restarting now to apply the update. See you in a moment!"
 msgstr ""
-"Bot sedang memulai ulang sekarang untuk menerapkan pembaruan. Sampai "
-"jumpa lagi!"
+"Bot dimulai ulang sekarang untuk menerapkan pembaruan. Sampai jumpa "
+"sebentar lagi!"
 
-#: /home/admin/joao/TTMediaBot/bot/app_vars.py:12
+# | msgid "" "Hello! I am João Almeida. This is my fork of TTMediaBot for
+# | TeamTalk 5.\n" "This repository focuses on stability and support for
+# YouTube
+# | Music.\n" "Repository: https://github.com/JoaoDEVWHADS/TTMediaBot\n"
+# | "Original Authors: Amir Gumerov, Vladislav Kopylov, Beqa Gozalishvili, "
+# | "Kirill Belousov.\n"
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/app_vars.py:12
 msgid ""
 "Hello! I am João Almeida. This is my fork of TTMediaBot for TeamTalk 5.\n"
 "This repository focuses on stability and support for YouTube Music.\n"
 "Repository: https://github.com/JoaoDEVWHADS/TTMediaBot\n"
+"Cross-platform (Windows and Linux) version by Nico Hilmi.\n"
+"Repository: https://github.com/nicohilmi/TTMediaBot-Cross-platform\n"
 "Original Authors: Amir Gumerov, Vladislav Kopylov, Beqa Gozalishvili, "
 "Kirill Belousov.\n"
 msgstr ""
 "Halo! Saya João Almeida. Ini adalah fork TTMediaBot saya untuk TeamTalk "
 "5.\n"
-"Repositori ini berfokus pada stabilitas dan dukungan untuk YouTube Music."
-"\n"
+"Repositori ini berfokus pada stabilitas dan dukungan YouTube Music.\n"
 "Repositori: https://github.com/JoaoDEVWHADS/TTMediaBot\n"
-"Penulis Asli: Amir Gumerov, Vladislav Kopylov, Beqa Gozalishvili, Kirill "
+"Versi lintas platform (Windows dan Linux) oleh Nico Hilmi.\n"
+"Repositori: https://github.com/nicohilmi/TTMediaBot-Cross-platform\n"
+"Pembuat asli: Amir Gumerov, Vladislav Kopylov, Beqa Gozalishvili, Kirill "
 "Belousov.\n"
 
-#: /home/admin/joao/TTMediaBot/bot/TeamTalk/__init__.py:173
-msgid "Send \"h\" for help"
-msgstr "Kirim \"h\" untuk bantuan."
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/update_state.py:65
+msgid "Update completed successfully! I am back online."
+msgstr "Pembaruan berhasil! Saya sudah kembali online."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:144
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/update_state.py:69
+#, python-brace-format
+msgid "TTMediaBot was updated from version {old} to version {new}."
+msgstr "TTMediaBot diperbarui dari versi {old} ke versi {new}."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/update_state.py:75
+#, python-brace-format
+msgid "TTMediaBot is now version {version}."
+msgstr "TTMediaBot sekarang versi {version}."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/update_state.py:83
+#, python-brace-format
+msgid ""
+"{count} new setting(s) were added to config.json. Your own settings were "
+"kept."
+msgstr ""
+"{count} pengaturan baru ditambahkan ke config.json. Pengaturan Anda "
+"sendiri tetap dipertahankan."
+
+# | msgid "URL is not available"
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:343
+msgid "Update available"
+msgstr "Pembaruan tersedia"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:344
+msgid "A new version of TTMediaBot is ready to install."
+msgstr "Versi baru TTMediaBot siap dipasang."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:345
+#, python-brace-format
+msgid "Installed version: {version} ({commit})"
+msgstr "Versi terpasang: {version} ({commit})"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:351
+#, python-brace-format
+msgid "Available version: {version} ({commit})"
+msgstr "Versi tersedia: {version} ({commit})"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:357
+#, python-brace-format
+msgid "Latest commit: {commit}"
+msgstr "Commit terbaru: {commit}"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:368
+#, python-brace-format
+msgid "Latest change: {subject} ({author}, {date})"
+msgstr "Perubahan terbaru: {subject} ({author}, {date})"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:379
+#, python-brace-format
+msgid "This update contains {count} changes."
+msgstr "Pembaruan ini berisi {count} perubahan."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:384
+msgid ""
+"It also changes the required Python packages. They are installed while "
+"the bot restarts."
+msgstr ""
+"Pembaruan ini juga mengubah paket Python yang diperlukan. Paket tersebut "
+"dipasang saat bot dimulai ulang."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:389
+msgid "To install it, an administrator can send: install"
+msgstr "Untuk memasangnya, administrator dapat mengirim: install"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:392
+msgid "The bot will restart automatically to finish the update."
+msgstr "Bot akan dimulai ulang otomatis untuk menyelesaikan pembaruan."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/updater.py:397
+msgid ""
+"This copy has changes that are not on GitHub, so it must be updated "
+"manually."
+msgstr ""
+"Salinan ini memiliki perubahan yang tidak ada di GitHub, sehingga harus "
+"diperbarui secara manual."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/TeamTalk/__init__.py:206
+msgid "Send \"h\" for help"
+msgstr "Kirim \"h\" untuk bantuan"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:179
 msgid "Unknown command. Send \"h\" for help."
 msgstr "Perintah tidak dikenal. Kirim \"h\" untuk bantuan."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:150
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:724
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:730
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1130
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1213
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1285
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1359
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:136
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:150
-#: /home/admin/joao/TTMediaBot/bot/modules/uploader.py:85
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:185
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:800
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:806
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1213
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1295
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1367
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1441
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:130
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:144
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/uploader.py:85
 #, python-brace-format
 msgid "Error: {}"
-msgstr "Kesalahan: {}."
+msgstr "Terjadi kesalahan: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:162
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:207
 msgid "You are banned"
-msgstr "Anda dilarang."
+msgstr "Anda diblokir"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:166
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:211
 msgid "You are not in bot's channel"
-msgstr "Anda tidak berada di saluran bot."
+msgstr "Anda tidak berada di saluran bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:170
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:215
 msgid "Bot is locked"
-msgstr "Bot dikunci."
+msgstr "Bot sedang dikunci"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:174
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:219
 msgid "This command is blocked"
-msgstr "Perintah ini diblokir."
+msgstr "Perintah ini diblokir"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/__init__.py:198
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/__init__.py:243
 msgid "Unknown command"
-msgstr "Perintah tidak diketahui."
+msgstr "Perintah tidak dikenal"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:21
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:23
 msgid ""
 "+/-COMMAND Blocks or unblocks commands. +COMMAND adds command to the "
 "blocklist. -COMMAND removes from it. Without a command shows the "
 "blocklist"
 msgstr ""
-"+/-Perintah Memblokir atau membuka blokir perintah. +Perintah tambahkan "
-"perintah ke daftar blokir. -Perintah hapus perintah dari daftar perintah."
-" Tanpa argumen apapun, tampilkan daftar blokir."
+"+/-PERINTAH Memblokir atau membuka blokir perintah. +PERINTAH menambahkan"
+" perintah ke daftar blokir, -PERINTAH menghapusnya dari daftar. Tanpa "
+"perintah, menampilkan daftar blokir"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:32
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:322
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:352
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:471
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:483
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:539
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1059
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1081
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1145
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:34
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:336
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:366
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:547
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:559
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:615
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1143
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1165
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1228
 msgid "The list is empty"
-msgstr "Daftar kosong."
+msgstr "Daftar kosong"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:37
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:304
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:336
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:434
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:39
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:318
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:350
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:510
 msgid "Added"
-msgstr "Ditambahkan."
+msgstr "Ditambahkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:39
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:41
 msgid "This command is already added"
-msgstr "Perintah ini sudah ditambahkan."
+msgstr "Perintah ini sudah ada di daftar"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:45
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:310
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:342
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:446
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:47
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:324
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:356
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:522
 msgid "Deleted"
-msgstr "Dihapus."
+msgstr "Dihapus"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:47
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:49
 msgid "This command is not blocked"
-msgstr "Perintah ini tidak diblokir."
+msgstr "Perintah ini tidak diblokir"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:56
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:58
 msgid "GENDER Changes bot's gender. n neutral, m male, f female"
 msgstr ""
-"GENDER Mengubah gender bot. n netral, m laki-laki, f perempuanJENIS "
-"KELAMIN Mengubah jenis kelamin bot. n netral, m laki-laki, f perempuan."
+"JENIS_KELAMIN Mengubah jenis kelamin bot. n netral, m laki-laki, f "
+"perempuan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:70
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:72
 msgid "LANGUAGE Changes bot's language"
-msgstr "Bahasa ubah bahasa bot."
+msgstr "BAHASA Mengubah bahasa bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:78
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:80
 msgid "The language has been changed"
-msgstr "Bahasa telah diubah."
+msgstr "Bahasa diubah"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:80
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:82
 msgid "Incorrect language"
-msgstr "Bahasa tidak tersedia."
+msgstr "Bahasa tidak tersedia"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:83
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:85
 #, python-brace-format
 msgid ""
 "Current language: {current_language}. Available languages: "
 "{available_languages}"
 msgstr ""
 "Bahasa saat ini: {current_language}. Bahasa yang tersedia: "
-"{available_languages}."
+"{available_languages}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:93
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:95
 msgid "NICKNAME Changes bot's nickname"
-msgstr "NAMA PANGGILAN ubah nama panggilan bot."
+msgstr "NAMA_PANGGILAN Mengubah nama panggilan bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:104
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:106
 msgid ""
 "r/f Clears bot's cache. r clears recents, f clears favorites, without an "
 "option clears the entire cache"
 msgstr ""
-"r/f Membersihkan cache bot. r hapus daftar terbaru, f hapus daftar "
-"favorit, tanpa argumen apapun hapus seluruh cache."
+"r/f Menghapus cache bot. r menghapus daftar terbaru, f menghapus daftar "
+"favorit, tanpa opsi menghapus seluruh cache"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:112
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:114
 msgid "Cache cleared"
-msgstr "Seluruh daftar cache dibersihkan."
+msgstr "Cache dihapus"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:116
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:118
 msgid "Recents cleared"
-msgstr "Daftar cache terbaru dibersihkan."
+msgstr "Daftar terbaru dihapus"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:120
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:122
 msgid "Favorites cleared"
-msgstr "Daftar cache favorit dibersihkan."
+msgstr "Daftar favorit dihapus"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:127
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:132
 msgid ""
 "Join channel. first argument is channel name or id, second argument is "
 "password, split argument \" | \", if password is undefined, don't type "
 "second argument"
 msgstr ""
-"Gabung dengan saluran. argumen pertama adalah nama atau ID saluran, "
-"argumen kedua adalah kata sandi, Setiap argumen dipisahkan oleh tanda "
-"garis fertikal (|), jika kata sandi tidak ditentukan, jangan ketik "
-"argumen kedua."
+"Bergabung ke saluran. Argumen pertama adalah nama atau ID saluran, "
+"argumen kedua adalah kata sandi. Pisahkan argumen dengan \" | \". Jika "
+"tidak ada kata sandi, jangan tulis argumen kedua"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:146
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:151
 msgid "This channel does not exist"
-msgstr "Saluran ini tidak ada."
+msgstr "Saluran ini tidak ada"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:160
+# | msgid "Joining channel: {}"
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:160
+msgid "Joined the channel"
+msgstr "Berhasil bergabung ke saluran"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:168
 #, python-brace-format
 msgid "Error joining channel: {error}"
-msgstr "Terjadi kesalahan saat bergabung dengan saluran: {error}."
+msgstr "Gagal bergabung ke saluran: {error}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:208
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:179
+msgid "No confirmation from the server, the bot may not have joined the channel"
+msgstr "Server tidak memberi konfirmasi. Bot mungkin belum bergabung ke saluran"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:222
 msgid "Enables or disables voice transmission"
-msgstr "Mengaktifkan atau menonaktifkan aktifasi suara."
+msgstr "Mengaktifkan atau menonaktifkan transmisi suara"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:215
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:217
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:229
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:231
 msgid "Voice transmission enabled"
-msgstr "Aktifasi suara diaktifkan."
+msgstr "Transmisi suara diaktifkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:222
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:236
 msgid "Voice transmission disabled"
-msgstr "Aktifasi suara dinonaktifkan."
+msgstr "Transmisi suara dinonaktifkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:228
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:242
 msgid "Locks or unlocks the bot"
-msgstr "Kunci atau buka kunci bot."
+msgstr "Mengunci atau membuka kunci bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:233
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:247
 msgid "Locked"
-msgstr "Terkunci."
+msgstr "Terkunci"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:235
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:249
 msgid "Unlocked"
-msgstr "Tidak terkunci."
+msgstr "Kunci dibuka"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:242
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:256
 msgid "STATUS Changes bot's status"
-msgstr "STATUS ubah status bot."
+msgstr "STATUS Mengubah status bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:252
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:266
 msgid "Enables or disables event handling"
-msgstr "Mengaktifkan atau menonaktifkan penanganan acara."
+msgstr "Mengaktifkan atau menonaktifkan penanganan peristiwa"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:259
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:273
 msgid "Event handling is enabled"
-msgstr "Penanganan acara diaktifkan."
+msgstr "Penanganan peristiwa diaktifkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:261
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:275
 msgid "Event handling is disabled"
-msgstr "Penanganan acara dinonaktifkan."
+msgstr "Penanganan peristiwa dinonaktifkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:269
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:283
 msgid "Enables or disables sending of channel messages"
-msgstr "Mengaktifkan atau menonaktifkan mengirim pesan teks ke saluran."
+msgstr "Mengaktifkan atau menonaktifkan pengiriman pesan ke saluran"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:277
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:291
 msgid "Channel messages enabled"
-msgstr "Pesan teks ke saluran diaktifkan."
+msgstr "Pesan ke saluran diaktifkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:279
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:293
 msgid "Channel messages disabled"
-msgstr "Pesan teks ke saluran dinonaktifkan."
+msgstr "Pesan ke saluran dinonaktifkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:286
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:300
 msgid "Saves bot's configuration"
-msgstr "Simpan konfigurasi bot."
+msgstr "Menyimpan konfigurasi bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:290
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:304
 msgid "Configuration saved"
-msgstr "Konfigurasi disimpan."
+msgstr "Konfigurasi disimpan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:297
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:311
 msgid ""
 "+/-USERNAME Manages a list of administrators. +USERNAME adds a user. "
 "-USERNAME removes it. Without an option shows the list"
 msgstr ""
-"+/-NAMAPENGGUNA Kelola daftar administrator. +NAMAPENGGUNA tambahkan "
-"pengguna ke daftar administrator. -NAMAPENGGUNA hapus dari daftar "
-"administrator. Tampa argumen apapun tampilkan daftar administrator."
+"+/-NAMA_PENGGUNA Mengelola daftar administrator. +NAMA_PENGGUNA "
+"menambahkan pengguna, -NAMA_PENGGUNA menghapusnya. Tanpa opsi, "
+"menampilkan daftar"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:313
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:327
 msgid "This user is not in the admin list"
-msgstr "Pengguna ini tidak ada dalam daftar administrator."
+msgstr "Pengguna ini tidak ada di daftar administrator"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:319
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:349
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:333
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:363
 msgid "<Anonymous>"
 msgstr "<Anonim>"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:329
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:343
 msgid ""
 "+/-USERNAME Manages a list of banned users. +USERNAME adds a user. "
 "-USERNAME removes it. Without an option shows the list"
 msgstr ""
-"+/-NAMAPENGGUNA KELOLA daftar pengguna yang dilarang. +NAMAPENGGUNA "
-"tambahkan pengguna ke daftar pengguna yang dilarang. -NAMAPENGGUNA hapus "
-"dari daftar pengguna yang dilarang. Tanpa argumen apapun tampilkan daftar"
-" pengguna yang dilarang."
+"+/-NAMA_PENGGUNA Mengelola daftar pengguna yang diblokir. +NAMA_PENGGUNA "
+"menambahkan pengguna, -NAMA_PENGGUNA menghapusnya. Tanpa opsi, "
+"menampilkan daftar"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:344
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:358
 msgid "This user is not banned"
-msgstr "Pengguna ini tidak dilarang."
+msgstr "Pengguna ini tidak diblokir"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:358
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:372
 msgid "Quits the bot"
-msgstr "Tutup bot."
+msgstr "Menutup bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:367
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:381
 msgid "Restarts the bot"
-msgstr "Mulai ulang bot."
+msgstr "Memulai ulang bot"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/admin_commands.py:382
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:403
+msgid ""
+"[on/off/SECONDS] Turns the fade-out when stopping playback on or off. A "
+"number of seconds sets its length and turns it on. Without an option it "
+"switches between on and off"
+msgstr ""
+"[on/off/DETIK] Mengaktifkan atau menonaktifkan fade-out saat pemutaran "
+"dihentikan. Angka detik mengatur durasinya dan mengaktifkannya. Tanpa "
+"opsi, beralih antara aktif dan nonaktif"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:425
+msgid "Fade-out on stop is disabled"
+msgstr "Fade-out saat berhenti dinonaktifkan"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:427
+#, python-brace-format
+msgid "Fade-out on stop is enabled ({seconds} seconds)"
+msgstr "Fade-out saat berhenti diaktifkan ({seconds} detik)"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:435
+msgid "Installs the latest update from GitHub, then restarts the bot"
+msgstr "Memasang pembaruan terbaru dari GitHub, lalu memulai ulang bot"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:441
+msgid "An update is already being installed"
+msgstr "Pembaruan sedang dipasang"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:467
+#, python-brace-format
+msgid "Unable to check for updates: {error}"
+msgstr "Tidak dapat memeriksa pembaruan: {error}"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:469
+#, python-brace-format
+msgid "TTMediaBot is up to date (version {version})."
+msgstr "TTMediaBot sudah yang terbaru (versi {version})."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:473
+msgid "Installing the update. This takes a moment."
+msgstr "Memasang pembaruan. Mohon tunggu sebentar."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:478
+#, python-brace-format
+msgid "The update could not be installed: {error}"
+msgstr "Pembaruan tidak dapat dipasang: {error}"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:491
+msgid ""
+"The update was installed, but it changes the required Python packages. "
+"Run pip install -r requirements.txt on the bot's computer, then send rs "
+"to restart the bot."
+msgstr ""
+"Pembaruan terpasang, tetapi mengubah paket Python yang diperlukan. "
+"Jalankan pip install -r requirements.txt di komputer bot, lalu kirim rs "
+"untuk memulai ulang bot."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:495
+msgid ""
+"Update installed. The bot restarts now and installs the required Python "
+"packages while it starts."
+msgstr ""
+"Pembaruan terpasang. Bot dimulai ulang sekarang dan memasang paket Python"
+" yang diperlukan saat dimulai."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:502
+msgid "Update installed. Restarting now to apply it."
+msgstr "Pembaruan terpasang. Memulai ulang sekarang untuk menerapkannya."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/admin_commands.py:511
 msgid "Returns current channel's ID"
-msgstr "Mengembalikan ID saluran saat ini"
+msgstr "Menampilkan ID saluran saat ini"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/command.py:28
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/command.py:30
 msgid "help text not found"
-msgstr "teks bantuan tidak ditemukan."
+msgstr "Teks bantuan tidak ditemukan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:20
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:21
 msgid "Shows command help"
-msgstr "Tampilkan bantuan perintah."
+msgstr "Menampilkan bantuan perintah"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:29
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:30
 msgid "Shows information about the bot"
-msgstr "Tampilkan informasi tentang bot."
+msgstr "Menampilkan informasi tentang bot"
 
 # --- Search Results Mode (sr/sl/slc) ---
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:39
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:40
 msgid ""
 "QUERY Plays tracks found for the query. If no query is given, plays or "
 "pauses current track. When search results mode (sr) is active, shows a "
 "numbered list instead"
 msgstr ""
-"QUERY Memutar trek yang ditemukan. Tanpa query, memutar atau menjeda trek"
-" saat ini. Dengan mode hasil pencarian (sr) aktif, menampilkan daftar "
-"bernomor"
+"KATA_KUNCI Memutar lagu yang ditemukan untuk kata kunci tersebut. Tanpa "
+"kata kunci, memutar atau menjeda lagu saat ini. Saat mode hasil pencarian"
+" (sr) aktif, menampilkan daftar bernomor"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:46
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:651
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:751
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:46
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:727
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:827
 msgid "Searching..."
 msgstr "Mencari..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:55
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:55
 msgid "Search results:"
 msgstr "Hasil pencarian:"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:58
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:58
 msgid "Use 'sl NUMBER' to select a track"
-msgstr "Gunakan 'sl NOMOR' untuk memilih trek"
+msgstr "Gunakan 'sl NOMOR' untuk memilih lagu"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:67
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:74
 #, python-brace-format
 msgid "{nickname} requested {request}"
-msgstr "{nickname} meminta {request}."
+msgstr "{nickname} meminta {request}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:72
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:202
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:219
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:769
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:879
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:967
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:78
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:239
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:265
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:282
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:428
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:853
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:963
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1051
 #, python-brace-format
 msgid "Playing {}"
-msgstr "Memutar {}."
+msgstr "Memutar {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:76
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:659
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:758
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1121
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:82
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:108
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:735
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:834
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1205
 msgid "Nothing is found for your query"
-msgstr "Tidak ada yang ditemukan untuk kueri Anda."
+msgstr "Tidak ditemukan hasil untuk pencarian Anda"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:79
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:761
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:85
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:837
 msgid "The selected service is currently unavailable"
-msgstr "Layanan yang dipilih saat ini tidak tersedia."
+msgstr "Layanan yang dipilih sedang tidak tersedia"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:91
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:97
 msgid "URL Plays a stream from a given URL"
-msgstr "URL Memutar aliran dari URL yang diberikan"
+msgstr "URL Memutar streaming dari URL yang diberikan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:101
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:102
+msgid "Loading URL / playlist..."
+msgstr "Memuat URL / daftar putar..."
+
+# | msgid "{nickname} requested playing from a URL"
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:113
 #, python-brace-format
-msgid "{nickname} requested playing from a URL"
-msgstr "{nickname} meminta pemutaran dari URL"
+msgid "{nickname} requested playing from a URL ({count} tracks)"
+msgstr "{nickname} meminta pemutaran dari URL ({count} lagu)"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:107
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:120
+#, python-brace-format
+msgid "Loaded {count} tracks"
+msgstr "{count} lagu dimuat"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:125
 msgid "Incorrect protocol"
-msgstr "Protokol salah"
+msgstr "Protokol tidak valid"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:109
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:127
 msgid "Cannot process stream URL"
-msgstr "Tidak dapat memproses URL aliran"
+msgstr "URL streaming tidak dapat diproses"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:111
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:129
 msgid "The path cannot be found"
-msgstr "Jalur tidak ditemukan"
+msgstr "Lokasi tidak ditemukan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:119
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:137
 msgid "Stops playback"
-msgstr "Hentikan pemutaran."
+msgstr "Menghentikan pemutaran"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:126
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:151
 #, python-brace-format
 msgid "{nickname} stopped playback"
-msgstr "{nickname} menghentikan pemutaran."
+msgstr "{nickname} menghentikan pemutaran"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:132
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:165
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:184
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:208
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:225
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:374
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:383
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:436
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:454
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:500
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:561
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:582
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:866
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:164
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:197
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:216
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:243
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:259
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:271
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:288
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:432
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:448
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:459
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:512
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:530
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:576
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:637
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:658
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:950
 msgid "Nothing is playing"
-msgstr "Tidak ada yang diputar."
+msgstr "Tidak ada yang diputar"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:139
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:171
 #, python-brace-format
 msgid ""
 "VOLUME Sets the volume to a value between 0 and {max_volume}. If no "
 "volume is specified, the current volume level is displayed"
 msgstr ""
-"VOLUME Menyetel volume ke nilai antara 0 dan {max_volume}. Jika tidak ada"
-" volume yang ditentukan, level volume saat ini ditampilkan."
+"VOLUME Mengatur volume ke nilai antara 0 dan {max_volume}. Tanpa nilai, "
+"menampilkan volume saat ini"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:160
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:192
 #, python-brace-format
 msgid "STEP Seeks current track backward. the default step is {seek_step} seconds"
-msgstr "Mundur {seek_step} detik."
+msgstr "LANGKAH Memundurkan lagu saat ini. Langkah bawaan: {seek_step} detik"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:179
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:211
 #, python-brace-format
 msgid "STEP Seeks current track forward. the default step is {seek_step} seconds"
-msgstr "Maju {seek_step} detik."
+msgstr "LANGKAH Memajukan lagu saat ini. Langkah bawaan: {seek_step} detik"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:197
-msgid "Plays next track"
-msgstr "Putar trek berikutnya."
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:229
+msgid ""
+"[NUMBER|?] Plays next track, jumps to track number, or shows current "
+"position with ?"
+msgstr ""
+"[NOMOR|?] Memutar lagu berikutnya, melompat ke lagu bernomor, atau "
+"menampilkan posisi saat ini dengan ?"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:206
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:883
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:251
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:440
+msgid "Incorrect number"
+msgstr "Nomor tidak valid"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:253
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:442
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:455
+#, python-brace-format
+msgid "Playing {} {}"
+msgstr "Memutar {} {}"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:257
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:446
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:524
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:557
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:596
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:918
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1035
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1172
+msgid "Out of list"
+msgstr "Di luar daftar"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:269
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:967
 msgid "No next track"
-msgstr "Tidak ada trek berikutnya."
+msgstr "Tidak ada lagu berikutnya"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:214
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:277
 msgid "Plays previous track"
-msgstr "Putar trek sebelumnya."
+msgstr "Memutar lagu sebelumnya"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:223
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:286
 msgid "No previous track"
-msgstr "Tidak ada trek sebelumnya."
+msgstr "Tidak ada lagu sebelumnya"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:232
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:295
 msgid ""
 "MODE Sets the playback mode. If no mode is specified, the current mode "
 "and a list of modes are displayed"
 msgstr ""
-"MODE Mengatur mode pemutaran. Jika tidak ada mode yang ditentukan, mode "
-"saat ini dan daftar mode akan ditampilkan."
+"MODE Mengatur mode pemutaran. Tanpa mode, menampilkan mode saat ini dan "
+"daftar mode"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:237
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:300
 msgid "Single Track"
-msgstr "Trek tunggal"
+msgstr "Satu lagu"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:238
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:301
 msgid "Repeat Track"
-msgstr "Ulangi trek"
+msgstr "Ulangi lagu"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:239
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:302
 msgid "Track list"
-msgstr "Daftar trek"
+msgstr "Daftar lagu"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:240
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:303
 msgid "Repeat track list"
-msgstr "Ulangi daftar trek"
+msgstr "Ulangi daftar lagu"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:241
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:304
 msgid "Random"
 msgstr "Acak"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:244
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:307
 #, python-brace-format
 msgid ""
 "Current mode: {current_mode}\n"
 "{modes}"
 msgstr ""
 "Mode saat ini: {current_mode}\n"
-"{mode}."
+"{modes}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:262
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:325
 #, python-brace-format
 msgid "Current mode: {mode}"
-msgstr "Mode saat ini: {mode}."
+msgstr "Mode saat ini: {mode}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:266
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:329
 msgid "Incorrect mode"
-msgstr "Mode salah"
+msgstr "Mode tidak valid"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:275
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:338
 msgid ""
 "SERVICE Selects the service to play from, sv SERVICE h returns additional"
 " help. If no service is specified, the current service and a list of "
 "available services are displayed"
 msgstr ""
-"LAYANAN Memilih layanan untuk digunakan, sv LAYANAN h TAMPILKAN bantuan "
-"tambahan. Jika tidak ada layanan yang ditentukan, layanan saat ini dan "
-"daftar layanan yang tersedia akan ditampilkan."
+"LAYANAN Memilih layanan sumber pemutaran. sv LAYANAN h menampilkan "
+"bantuan tambahan. Tanpa layanan, menampilkan layanan saat ini dan daftar "
+"layanan yang tersedia"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:283
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:346
 #, python-brace-format
 msgid ""
 "Unknown service.\n"
@@ -525,7 +740,7 @@ msgstr ""
 "Layanan tidak dikenal.\n"
 "{}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:292
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:355
 #, python-brace-format
 msgid ""
 "Current service: {}\n"
@@ -534,40 +749,40 @@ msgstr ""
 "Layanan saat ini: {}\n"
 "Peringatan: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:294
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:357
 #, python-brace-format
 msgid "Current service: {}"
-msgstr "Layanan saat ini: {}."
+msgstr "Layanan saat ini: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:300
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:363
 #, python-brace-format
 msgid ""
 "Error: {error}\n"
 "{service} is disabled"
 msgstr ""
-"Kesalahan: {error}\n"
-"{service} dinonaktifkan."
+"Terjadi kesalahan: {error}\n"
+"{service} dinonaktifkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:307
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:370
 #, python-brace-format
 msgid "{service} is disabled"
-msgstr "{service} dinonaktifkan."
+msgstr "{service} dinonaktifkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:314
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:377
 msgid "This service has no additional help"
-msgstr "Layanan ini tidak memiliki bantuan tambahan."
+msgstr "Layanan ini tidak memiliki bantuan tambahan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:331
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:394
 #, python-brace-format
 msgid "{} (Error)"
 msgstr "{} (Kesalahan)"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:335
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:398
 #, python-brace-format
 msgid "{} (Warning: {})"
-msgstr "{} (Peringatan: {})."
+msgstr "{} (Peringatan: {})"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:342
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:405
 #, python-brace-format
 msgid ""
 "Current service: {current_service}\n"
@@ -578,252 +793,241 @@ msgstr ""
 "Layanan saat ini: {current_service}\n"
 "Tersedia:\n"
 "{available_services}\n"
-"kirim sv LAYANAN h untuk bantuan tambahan."
+"Kirim sv LAYANAN h untuk bantuan tambahan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:354
-msgid "NUMBER Selects track by number from the list of current results"
-msgstr "NOMOR Memilih trek dengan nomor dari daftar hasil saat ini."
+# | msgid "NUMBER Selects track by number from the list of current results"
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:417
+msgid "[NUMBER|?] Selects track by number, or shows current position with ?"
+msgstr ""
+"[NOMOR|?] Memilih lagu berdasarkan nomor, atau menampilkan posisi saat "
+"ini dengan ?"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:366
-msgid "Incorrect number"
-msgstr "Nomor salah."
-
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:368
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:379
-#, python-brace-format
-msgid "Playing {} {}"
-msgstr "Memutar {} {}."
-
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:372
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:448
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:481
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:520
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:834
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:951
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1088
-msgid "Out of list"
-msgstr "Daftar terlampaui."
-
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:390
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:466
 msgid ""
 "SPEED Sets playback speed from 0.25 to 4. If no speed is given, shows "
 "current speed"
 msgstr ""
-"KECEPATAN Mengatur kecepatan pemutaran dari 0,25 hingga 4. Jika tidak ada"
-" kecepatan yang ditetapkan, tampilkan kecepatan saat ini."
+"KECEPATAN Mengatur kecepatan pemutaran dari 0,25 hingga 4. Tanpa "
+"kecepatan, menampilkan kecepatan saat ini"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:395
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:471
 #, python-brace-format
 msgid "Current rate: {}"
-msgstr "Kecepatan saat ini: {}."
+msgstr "Kecepatan saat ini: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:409
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:485
 msgid ""
 "+/-NUMBER Manages favorite tracks. + adds the current track to favorites."
 " - removes a track requested from favorites. If a number is specified "
 "after +/-, adds/removes a track with that number"
 msgstr ""
-"+/-NOMOR kelola trek favorit. + tambahkan trek saat ini ke daftar "
-"favorit. -NOMOR hapus trek yang diminta dari daftar favorit. Jika nomor "
-"ditentukan setelah +/-, tambahkan/hapus trek dengan nomor itu."
+"+/-NOMOR Mengelola lagu favorit. + menambahkan lagu saat ini ke favorit. "
+"- menghapus lagu yang diminta dari favorit. Jika ada nomor setelah +/-, "
+"menambahkan/menghapus lagu dengan nomor tersebut"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:415
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:491
 msgid "This command is not available for guest users"
-msgstr "Perintah ini tidak tersedia untuk pengguna guest."
+msgstr "Perintah ini tidak tersedia untuk pengguna tamu"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:452
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:528
 msgid "This track is not in favorites"
-msgstr "Lagu ini tidak ada di daftar favorit."
+msgstr "Lagu ini tidak ada di favorit"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:461
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:526
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:537
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:602
 #, python-brace-format
 msgid "{number}: {track_name}"
 msgstr "{number}: {track_name}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:489
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:565
 msgid "Gets a direct link to the current track"
-msgstr "Dapatkan tautan langsung ke trek saat ini."
+msgstr "Mendapatkan tautan langsung ke lagu saat ini"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:498
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:574
 msgid "URL is not available"
-msgstr "URL tidak tersedia."
+msgstr "URL tidak tersedia"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:507
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:583
 msgid ""
 "NUMBER Plays a track with  the given number from a list of recent tracks."
 " Without a number shows recent tracks"
 msgstr ""
-"NOMOR PUTAR trek dengan nomor tertentu dari daftar trek terbaru. Tanpa "
-"nomor TAMPILKAN DAFTAR trek terbaru."
+"NOMOR Memutar lagu dengan nomor tertentu dari daftar lagu terbaru. Tanpa "
+"nomor, menampilkan lagu terbaru"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:532
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:608
 #, python-brace-format
 msgid "{number}: {track_url}"
 msgstr "{number}: {track_url}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:547
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:623
 msgid "Downloads the current track and uploads it to the channel."
-msgstr "Unduh trek saat ini dan unggah ke saluran.."
+msgstr "Mengunduh lagu saat ini dan mengunggahnya ke saluran."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:557
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:633
 msgid "Downloading..."
 msgstr "Mengunduh..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:559
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:580
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:635
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:656
 msgid "Live streams cannot be downloaded"
-msgstr "Streaming langsung tidak dapat diunduh."
+msgstr "Siaran langsung tidak dapat diunduh"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:568
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:644
 msgid "Downloads the current track as video and uploads it to the channel."
-msgstr "Mengunduh trek saat ini sebagai video dan mengunggahnya ke saluran."
+msgstr "Mengunduh lagu saat ini sebagai video dan mengunggahnya ke saluran."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:578
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:654
 msgid "Downloading video..."
 msgstr "Mengunduh video..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:588
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:664
 msgid "Makes the bot join your current channel"
 msgstr "Membuat bot bergabung ke saluran Anda saat ini"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:609
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:626
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:685
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:702
 #, python-brace-format
 msgid "Joining channel: {}"
 msgstr "Bergabung ke saluran: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:618
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:694
 #, python-brace-format
 msgid "Failed to join channel. Error: {}"
 msgstr "Gagal bergabung ke saluran. Kesalahan: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:629
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:705
 #, python-brace-format
 msgid "Failed to join channel: {}"
 msgstr "Gagal bergabung ke saluran: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:636
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:712
 msgid ""
 "Downloads all tracks from a playlist/album URL, zips them, and uploads to"
 " the channel."
 msgstr ""
-"Mengunduh semua lagu dari URL playlist/album, mengompresnya dalam ZIP, "
-"dan mengunggahnya ke saluran."
+"Mengunduh semua lagu dari URL daftar putar/album, mengompresnya menjadi "
+"ZIP, lalu mengunggahnya ke saluran."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:644
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:720
 #, python-brace-format
 msgid "Current progress: {}"
-msgstr "Kemajuan saat ini: {}"
+msgstr "Progres saat ini: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:648
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:724
 msgid "Please send the link to the playlist or album."
-msgstr "Silakan kirim tautan ke daftar putar atau album."
+msgstr "Kirim tautan daftar putar atau album."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:667
-msgid "This command is for playlists and albums. For single tracks, use 'dl'."
+# | msgid "This command is for playlists and albums. For single tracks, use
+# | 'dl'."
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:743
+msgid ""
+"This command is for playlists, albums, and channels. For single tracks, "
+"use 'dl'."
 msgstr ""
-"Perintah ini untuk daftar putar dan album. Untuk lagu tunggal, gunakan "
-"'dl'."
+"Perintah ini untuk daftar putar, album, dan channel. Untuk satu lagu, "
+"gunakan 'dl'."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:742
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:818
 msgid ""
 "QUERY Searches for a track and adds it to the queue. If nothing is "
 "playing, starts immediately"
 msgstr ""
-"KUERI Mencari lagu dan menambahkannya ke antrean. Jika tidak ada yang "
-"diputar, langsung dimulai"
+"KATA_KUNCI Mencari lagu dan menambahkannya ke antrean. Jika tidak ada "
+"yang diputar, langsung diputar"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:778
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:862
 #, python-brace-format
 msgid "{nickname} added to queue: {track}"
 msgstr "{nickname} menambahkan ke antrean: {track}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:784
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:868
 #, python-brace-format
 msgid "Added to queue [{position}]: {track}"
 msgstr "Ditambahkan ke antrean [{position}]: {track}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:791
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:875
 msgid "Lists all tracks in the queue"
-msgstr "Daftar semua lagu dalam antrean"
+msgstr "Menampilkan semua lagu dalam antrean"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:797
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:881
 msgid "The queue is empty"
 msgstr "Antrean kosong"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:805
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:889
 #, python-brace-format
 msgid "Queue ({count} track(s)):"
 msgstr "Antrean ({count} lagu):"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:815
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:899
 msgid "NUMBER Removes track number NUMBER from the queue"
-msgstr "NUMBER Menghapus lagu nomor NUMBER dari antrean"
+msgstr "NOMOR Menghapus lagu nomor NOMOR dari antrean"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:840
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:924
 #, python-brace-format
 msgid "Removed from queue: {track}"
 msgstr "Dihapus dari antrean: {track}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:847
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:931
 msgid "Clears the entire queue"
-msgstr "Membersihkan seluruh antrean"
+msgstr "Mengosongkan seluruh antrean"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:851
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:935
 msgid "The queue is already empty"
 msgstr "Antrean sudah kosong"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:854
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:938
 msgid "Queue cleared"
-msgstr "Antrean dibersihkan"
+msgstr "Antrean dikosongkan"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:861
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:945
 msgid ""
 "Skips current track and plays the next one from the queue. Falls back to "
 "normal next if queue is empty"
 msgstr ""
 "Melewati lagu saat ini dan memutar lagu berikutnya dari antrean. Jika "
-"antrean kosong, beralih ke lagu berikutnya secara normal"
+"antrean kosong, beralih ke lagu berikutnya seperti biasa"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:872
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:956
 #, python-brace-format
 msgid "Playing next from queue: {}"
-msgstr "Memutar berikutnya dari antrean: {}"
+msgstr "Memutar lagu berikutnya dari antrean: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:896
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:980
 msgid ""
 "Toggles search results mode. When active, 'p QUERY' shows a numbered "
 "list. Use 'sr on' or 'sr off' to set explicitly. Save permanently with "
 "'sc'"
 msgstr ""
-"Mengalihkan mode hasil pencarian. Saat aktif, 'p QUERY' menampilkan "
-"daftar bernomor. Gunakan 'sr on' atau 'sr off'. Simpan permanen dengan "
-"'sc'"
+"Mengaktifkan atau menonaktifkan mode hasil pencarian. Saat aktif, 'p "
+"KATA_KUNCI' menampilkan daftar bernomor. Gunakan 'sr on' atau 'sr off' "
+"untuk mengatur langsung. Simpan permanen dengan 'sc'"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:904
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:914
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:988
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:998
 msgid "Search results mode: ON"
-msgstr "Mode hasil pencarian: AKTIF"
+msgstr "Mode hasil pencarian: aktif"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:908
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:916
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:992
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1000
 msgid "Search results mode: OFF"
-msgstr "Mode hasil pencarian: NONAKTIF"
+msgstr "Mode hasil pencarian: nonaktif"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:928
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1012
 msgid ""
 "NUMBER Selects and plays result NUMBER from the last search list "
 "(requires search results mode to be active)"
 msgstr ""
-"NOMOR Memilih dan memutar hasil NOMOR dari daftar pencarian terakhir "
-"(memerlukan mode hasil pencarian aktif)"
+"NOMOR Memilih dan memutar hasil bernomor NOMOR dari daftar pencarian "
+"terakhir (mode hasil pencarian harus aktif)"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:947
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1031
 msgid "No search results available. Use 'p QUERY' to search first"
-msgstr "Tidak ada hasil pencarian. Gunakan 'p QUERY' untuk mencari terlebih dahulu"
+msgstr ""
+"Belum ada hasil pencarian. Gunakan 'p KATA_KUNCI' untuk mencari terlebih "
+"dahulu"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:961
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1045
 #, python-brace-format
 msgid "{nickname} selected: {track}"
 msgstr "{nickname} memilih: {track}"
@@ -831,85 +1035,85 @@ msgstr "{nickname} memilih: {track}"
 # | msgid "" "NUMBER Sets how many results are shown when search results mode
 # is
 # | " "active. Without a number shows current count. Resets to 5 on restart"
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:978
-#, fuzzy
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1062
 msgid ""
 "NUMBER Sets how many results are shown when search results mode is "
 "active. Without a number shows current count. Resets to 1 on restart"
 msgstr ""
-"NOMOR Mengatur berapa hasil yang ditampilkan dalam mode pencarian. Tanpa "
-"nomor menampilkan jumlah saat ini. Diatur ulang ke 5 saat restart"
+"NOMOR Mengatur jumlah hasil yang ditampilkan saat mode hasil pencarian "
+"aktif. Tanpa nomor, menampilkan jumlah saat ini. Kembali ke 1 saat bot "
+"dimulai ulang"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:984
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1068
 #, python-brace-format
 msgid "Search results count: {count}"
 msgstr "Jumlah hasil pencarian: {count}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:994
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1078
 msgid "Invalid count. Please enter a number greater than 0"
 msgstr "Jumlah tidak valid. Masukkan angka lebih dari 0"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:999
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1083
 #, python-brace-format
 msgid "Search results count set to {count}"
 msgstr "Jumlah hasil pencarian diatur ke {count}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1007
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1091
 msgid "LINK Adds a link to the download list."
-msgstr "LINK Menambahkan tautan ke daftar unduhan."
+msgstr "TAUTAN Menambahkan tautan ke daftar unduhan."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1019
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1103
 #, python-brace-format
 msgid "Added link to the list. Total: {count}"
 msgstr "Tautan ditambahkan ke daftar. Total: {count}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1028
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1112
 msgid "LINK1 LINK2 ... Adds multiple space-separated links to the download list."
 msgstr ""
-"LINK1 LINK2 ... Menambahkan beberapa tautan yang dipisahkan spasi ke "
+"TAUTAN1 TAUTAN2 ... Menambahkan beberapa tautan (dipisahkan spasi) ke "
 "daftar unduhan."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1043
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1127
 #, python-brace-format
 msgid "Added {added_count} links. Total list size: {count}"
-msgstr "Berhasil menambahkan {added_count} tautan. Total ukuran daftar: {count}"
+msgstr "{added_count} tautan ditambahkan. Total dalam daftar: {count}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1053
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1137
 msgid "Lists all links in the download list."
 msgstr "Menampilkan semua tautan dalam daftar unduhan."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1072
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1156
 msgid "NUMBER_OR_LINK Removes a link from the download list by its index or URL."
 msgstr ""
-"NOMOR_ATAU_TAUTAN Menghapus tautan dari daftar unduhan berdasarkan indeks"
-" atau URL."
+"NOMOR_ATAU_TAUTAN Menghapus tautan dari daftar unduhan berdasarkan nomor "
+"urut atau URL."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1097
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1181
 msgid "Link not found in the list"
-msgstr "Tautan tidak ditemukan dalam daftar"
+msgstr "Tautan tidak ada di daftar"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1099
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1183
 #, python-brace-format
 msgid "Removed link: {link}"
-msgstr "Tautan yang dihapus: {link}"
+msgstr "Tautan dihapus: {link}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1106
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1190
 msgid "LINK Downloads a link directly and uploads it to the channel."
-msgstr "LINK Mengunduh tautan secara langsung dan mengunggahnya ke saluran."
+msgstr "TAUTAN Mengunduh tautan secara langsung dan mengunggahnya ke saluran."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1114
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1198
 msgid "Searching and downloading..."
 msgstr "Mencari dan mengunduh..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1139
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1222
 msgid ""
 "Downloads all links in your list and uploads them to the channel. Can "
 "download normally or as a ZIP archive."
 msgstr ""
 "Mengunduh semua tautan di daftar Anda dan mengunggahnya ke saluran. Bisa "
-"diunduh secara normal atau sebagai arsip ZIP."
+"diunduh satu per satu atau sebagai arsip ZIP."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1151
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1234
 msgid ""
 "How do you want to download these links?\n"
 "1. Download individually (Normal)\n"
@@ -917,149 +1121,297 @@ msgid ""
 "Respond only with 1 or 2."
 msgstr ""
 "Bagaimana Anda ingin mengunduh tautan ini?\n"
-"1. Unduh satu per satu (Normal)\n"
-"2. Kompres semua ke dalam file ZIP\n"
-"Jawab hanya dengan 1 atau 2."
+"1. Unduh satu per satu (biasa)\n"
+"2. Kompres semuanya menjadi file ZIP\n"
+"Balas hanya dengan 1 atau 2."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1162
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1245
 #, python-brace-format
 msgid "Starting local download of {count} links..."
 msgstr "Memulai pengunduhan lokal {count} tautan..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1165
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1248
 #, python-brace-format
 msgid "Starting download of {count} links..."
 msgstr "Memulai pengunduhan {count} tautan..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1171
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1254
 #, python-brace-format
 msgid "Resolving and zipping locally {count} links..."
-msgstr "Mengurai dan mengompres secara lokal {count} tautan..."
+msgstr "Memproses dan mengompres {count} tautan secara lokal..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1174
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1257
 #, python-brace-format
 msgid "Resolving and zipping {count} links..."
-msgstr "Mengurai dan mengompres {count} tautan..."
+msgstr "Memproses dan mengompres {count} tautan..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1176
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1259
 msgid "Invalid option. Please send 'ads' again to select."
-msgstr "Pilihan tidak valid. Silakan kirim 'ads' lagi untuk memilih."
+msgstr "Pilihan tidak valid. Kirim 'ads' lagi untuk memilih."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1182
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1221
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1265
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1303
 #, python-brace-format
 msgid "Processing link {number}/{total}: {link}"
 msgstr "Memproses tautan {number}/{total}: {link}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1190
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1229
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1273
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1311
 #, python-brace-format
 msgid "Nothing is found for: {link}"
-msgstr "Tidak ada hasil yang ditemukan untuk: {link}"
+msgstr "Tidak ditemukan hasil untuk: {link}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1199
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1281
 #, python-brace-format
 msgid "Error downloading {link}: {error}"
 msgstr "Gagal mengunduh {link}: {error}"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1249
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1366
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1331
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1448
 msgid "All downloads completed successfully!"
-msgstr "Semua unduhan selesai dengan sukses!"
+msgstr "Semua unduhan selesai!"
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1254
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1371
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1336
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1453
 #, python-brace-format
 msgid "Downloads completed with {error_count} error(s)."
 msgstr "Unduhan selesai dengan {error_count} kesalahan."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1263
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1293
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1345
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1375
 msgid "Resolving links..."
-msgstr "Mengurai tautan..."
+msgstr "Memproses tautan..."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1277
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1310
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1359
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1392
 msgid "Error: No valid tracks found to download."
-msgstr "Error: Tidak ada trek valid yang ditemukan untuk diunduh."
+msgstr "Terjadi kesalahan: tidak ada lagu valid yang dapat diunduh."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1330
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:94
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1412
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:88
 msgid "Error: Failed to download any tracks from this playlist."
-msgstr "Kesalahan: Gagal mengunduh lagu apa pun dari daftar putar ini."
+msgstr ""
+"Terjadi kesalahan: tidak ada lagu dari daftar putar ini yang berhasil "
+"diunduh."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1382
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1464
 msgid ""
 "Toggles local download mode for the 'ads' command. When active, files are"
 " saved locally to the VPS instead of uploaded to TeamTalk."
 msgstr ""
-"Beralih mode unduh lokal untuk perintah 'ads'. Saat aktif, file disimpan "
-"secara lokal di VPS alih-alih diunggah ke TeamTalk."
+"Mengaktifkan atau menonaktifkan mode unduh lokal untuk perintah 'ads'. "
+"Saat aktif, file disimpan di VPS, bukan diunggah ke TeamTalk."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1388
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1470
 msgid "Local download mode (adsc) enabled."
 msgstr "Mode unduh lokal (adsc) diaktifkan."
 
-#: /home/admin/joao/TTMediaBot/bot/commands/user_commands.py:1390
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1472
 msgid "Local download mode (adsc) disabled."
 msgstr "Mode unduh lokal (adsc) dinonaktifkan."
 
-#: /home/admin/joao/TTMediaBot/bot/connectors/tt_player_connector.py:36
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1480
+msgid "The AI is turned off"
+msgstr "AI dinonaktifkan"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1483
+msgid ""
+"The AI is not set up yet. An administrator needs to add a Gemini API key "
+"to config.json (ai.gemini.api_key)"
+msgstr ""
+"AI belum diatur. Administrator perlu menambahkan kunci API Gemini ke "
+"config.json (ai.gemini.api_key)"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1487
+msgid ""
+"The AI needs the google-genai package. An administrator can install it "
+"with: pip install -r requirements.txt"
+msgstr ""
+"AI memerlukan paket google-genai. Administrator dapat memasangnya dengan:"
+" pip install -r requirements.txt"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1491
+msgid "The AI service set in config.json (ai.provider) does not exist"
+msgstr "Layanan AI yang diatur di config.json (ai.provider) tidak ada"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1494
+#, python-brace-format
+msgid "Your question is too long. The limit is {limit} characters"
+msgstr "Pertanyaan Anda terlalu panjang. Batasnya {limit} karakter"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1498
+#, python-brace-format
+msgid "Please wait {seconds} seconds before asking again"
+msgstr "Tunggu {seconds} detik sebelum bertanya lagi"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1502
+msgid "Your previous question is still being answered"
+msgstr "Pertanyaan Anda sebelumnya masih dijawab"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1504
+msgid "The AI is busy right now. Please try again in a moment"
+msgstr "AI sedang sibuk. Coba lagi sebentar lagi"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1507
+msgid ""
+"Google did not accept the API key. An administrator needs to check "
+"ai.gemini.api_key"
+msgstr ""
+"Google tidak menerima kunci API. Administrator perlu memeriksa "
+"ai.gemini.api_key"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1510
+msgid "The Gemini API is not available in the country of the bot"
+msgstr "Gemini API tidak tersedia di negara tempat bot berada"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1512
+msgid "The usage limit of the AI was reached. Please try again later"
+msgstr "Batas penggunaan AI tercapai. Coba lagi nanti"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1514
+msgid "The AI service is not available right now. Please try again later"
+msgstr "Layanan AI sedang tidak tersedia. Coba lagi nanti"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1516
+msgid "The AI took too long to answer. Please try again"
+msgstr "AI terlalu lama menjawab. Coba lagi"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1518
+msgid "The bot cannot reach the AI service. Please try again later"
+msgstr "Bot tidak dapat terhubung ke layanan AI. Coba lagi nanti"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1521
+#, python-brace-format
+msgid ""
+"The AI model {model} is not available. An administrator needs to check "
+"ai.gemini.model"
+msgstr ""
+"Model AI {model} tidak tersedia. Administrator perlu memeriksa "
+"ai.gemini.model"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1524
+msgid "The AI did not give an answer. Try asking in another way"
+msgstr "AI tidak memberikan jawaban. Coba ajukan dengan cara lain"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1525
+#, python-brace-format
+msgid "The AI could not answer: {reason}"
+msgstr "AI tidak dapat menjawab: {reason}"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1542
+msgid "AI is thinking..."
+msgstr "AI sedang berpikir..."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1554
+msgid ""
+"The previous conversation was no longer available, so a new one was "
+"started."
+msgstr "Percakapan sebelumnya sudah tidak tersedia, jadi percakapan baru dimulai."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1560
+#, python-brace-format
+msgid "Sources: {sources}"
+msgstr "Sumber: {sources}"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1568
+#, python-brace-format
+msgid ""
+"Welcome to {name} chat! You can start talking to the AI.\n"
+"Commands:\n"
+"/clear - Forget the current conversation and start a new topic.\n"
+"/c - End the chat session."
+msgstr ""
+"Selamat datang di chat {name}! Anda bisa mulai berbicara dengan AI.\n"
+"Perintah:\n"
+"/clear - Lupakan percakapan saat ini dan mulai topik baru.\n"
+"/c - Akhiri sesi chat."
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1576
+msgid ""
+"QUESTION Asks the AI. It searches Google when the answer needs current "
+"information, such as the weather or the news. Send chat to hold a "
+"conversation instead"
+msgstr ""
+"PERTANYAAN Bertanya kepada AI. AI mencari di Google jika jawabannya "
+"memerlukan informasi terkini, seperti cuaca atau berita. Kirim chat untuk"
+" memulai percakapan"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1587
+msgid ""
+"Starts a conversation with the AI. Everything you send is then a message "
+"to the AI, until you send /c. /clear starts a new topic"
+msgstr ""
+"Memulai percakapan dengan AI. Semua yang Anda kirim menjadi pesan untuk "
+"AI sampai Anda mengirim /c. /clear memulai topik baru"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1613
+msgid "Chat ended"
+msgstr "Chat diakhiri"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/commands/user_commands.py:1616
+msgid "Conversation cleared. You can start a new topic"
+msgstr "Percakapan dihapus. Anda bisa memulai topik baru"
+
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/connectors/tt_player_connector.py:36
 #, python-brace-format
 msgid "Playing: {track_name}"
-msgstr "Memutar: {track_name}."
+msgstr "Memutar: {track_name}"
 
-#: /home/admin/joao/TTMediaBot/bot/connectors/tt_player_connector.py:42
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/connectors/tt_player_connector.py:42
 #, python-brace-format
 msgid "Playing: {stream_url}"
-msgstr "Memutar: {stream_url}."
+msgstr "Memutar: {stream_url}"
 
-#: /home/admin/joao/TTMediaBot/bot/connectors/tt_player_connector.py:53
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/connectors/tt_player_connector.py:53
 #, python-brace-format
 msgid "Paused: {track_name}"
-msgstr "dijeda: {track_name}."
+msgstr "Dijeda: {track_name}"
 
-#: /home/admin/joao/TTMediaBot/bot/connectors/tt_player_connector.py:59
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/connectors/tt_player_connector.py:59
 #, python-brace-format
 msgid "Paused: {stream_url}"
-msgstr "dijeda: {stream_url}."
+msgstr "Dijeda: {stream_url}"
 
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:51
-#, python-brace-format
-msgid "Error: This playlist is too large (max {} tracks)."
-msgstr "Kesalahan: Daftar putar ini terlalu besar (maks {} lagu)."
-
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:61
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:55
 #, python-brace-format
 msgid "Downloading playlist: {}"
 msgstr "Mengunduh daftar putar: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:68
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:62
 #, python-brace-format
 msgid "Downloading track {}: {}"
 msgstr "Mengunduh lagu {}: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:100
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:94
 msgid "Zipping tracks..."
 msgstr "Mengompres lagu..."
 
-#: /home/admin/joao/TTMediaBot/bot/modules/playlist_uploader.py:115
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/playlist_uploader.py:109
 #, python-brace-format
 msgid "Uploading ZIP: {}"
 msgstr "Mengunggah ZIP: {}"
 
-#: /home/admin/joao/TTMediaBot/bot/modules/uploader.py:64
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/modules/uploader.py:64
 msgid "Error: Downloaded file not found."
-msgstr "Kesalahan: File yang diunduh tidak ditemukan."
+msgstr "Terjadi kesalahan: file hasil unduhan tidak ditemukan."
 
-#: /home/admin/joao/TTMediaBot/bot/services/yt.py:290
-#: /home/admin/joao/TTMediaBot/bot/services/yt.py:542
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/services/yt.py:164
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/services/yt.py:433
 msgid "Unknown Title"
-msgstr "Judul Tidak Diketahui"
+msgstr "Judul tidak diketahui"
 
-#: /home/admin/joao/TTMediaBot/bot/services/ytm.py:357
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/services/yt.py:191
+#: /home/claude/repo/TTMediaBot-Cross-platform/bot/services/ytm.py:122
 msgid "Unknown"
-msgstr "Tidak Diketahui"
+msgstr "Tidak diketahui"
+
+#: bot/player/__init__.py
+msgid "Could not play \"{name}\": the audio stream could not be loaded. Skipping to the next track."
+msgstr "Tidak dapat memutar \"{name}\": aliran audio tidak dapat dimuat. Melompat ke lagu berikutnya."
+
+#: bot/player/__init__.py
+msgid "Could not play \"{name}\": the audio stream could not be loaded. Please try again in a moment."
+msgstr "Tidak dapat memutar \"{name}\": aliran audio tidak dapat dimuat. Silakan coba lagi sebentar lagi."
 
 #~ msgid "Cannot upload file to channel"
 #~ msgstr "Tidak dapat mengunggah file ke saluran."
@@ -1086,9 +1438,9 @@ msgstr "Tidak Diketahui"
 #~ msgid "Not authorized to upload files to this channel"
 #~ msgstr "Tidak berwenang untuk mengunggah file ke saluran ini"
 
+#~ msgid "Plays next track"
+#~ msgstr "Putar trek berikutnya."
 
-msgid "Loading URL / playlist..."
-msgstr "Memuat URL / daftar putar..."
+#~ msgid "Error: This playlist is too large (max {} tracks)."
+#~ msgstr "Kesalahan: Daftar putar ini terlalu besar (maks {} lagu)."
 
-msgid "Loaded {count} tracks"
-msgstr "{count} trek dimuat"

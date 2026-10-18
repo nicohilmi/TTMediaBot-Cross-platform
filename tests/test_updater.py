@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -57,7 +58,8 @@ class UpdaterTestBase(TestCase):
                        check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         os.makedirs(os.path.join(self.dev, "bot"))
         git(self.dev, "init", "-b", "master")
-        write(os.path.join(self.dev, "bot", "app_vars.py"), 'app_version = "4.1"\n')
+        write(os.path.join(self.dev, "bot", "app_vars.py"),
+              'app_version = "{}"\n'.format(app_vars.app_version))
         write(os.path.join(self.dev, "requirements.txt"), "requests\n")
         write(os.path.join(self.dev, "feature.txt"), "one\n")
         git(self.dev, "add", ".")
@@ -137,7 +139,10 @@ class UpdaterTests(UpdaterTestBase):
         self.publish("New package", {"requirements.txt": "requests\nnumpy\n"})
         info = self.checker.check()
         self.assertTrue(info.requirements_changed)
-        self.assertIn("pip install -r requirements.txt", self.checker.format_notification(info))
+        self.assertIn(
+            "They are installed while the bot restarts.",
+            self.checker.format_notification(info),
+        )
 
     def test_install_pulls_and_the_folder_is_current_afterwards(self):
         self.publish("Ship it")
@@ -271,7 +276,7 @@ class InstallCommandTests(UpdaterTestBase):
 
     def test_up_to_date_replies_and_does_not_restart(self):
         reply = self.command("", self.user)
-        self.assertIn("up to date (version 4.1)", reply)
+        self.assertIn("up to date (version {})".format(app_vars.app_version), reply)
         self.assertEqual(RecordingRestart.calls, [])
         self.assertFalse(self.bot.is_updating)
 
@@ -286,12 +291,27 @@ class InstallCommandTests(UpdaterTestBase):
         self.assertTrue(any("Restarting now" in text for text in sent))
         self.assertEqual(git(self.folder, "rev-parse", "HEAD"), git(self.dev, "rev-parse", "HEAD"))
 
-    def test_changed_requirements_install_but_do_not_restart(self):
+    def test_changed_requirements_are_installed_during_the_restart(self):
         self.publish("New package", {"requirements.txt": "requests\nnumpy\n"})
-        reply = self.command("", self.user)
-        self.assertIn("pip install -r requirements.txt", reply)
-        self.assertEqual(RecordingRestart.calls, [])
+        self.assertIsNone(self.command("", self.user))
+        # The packages are not installed by the running bot: it asks the next start
+        # to do it (tools/apply_update.py), then restarts.
+        self.assertTrue(
+            os.path.exists(os.path.join(self.folder, "data", "requirements_pending"))
+        )
+        self.assertEqual(len(RecordingRestart.calls), 1)
+        self.assertTrue(self.bot.is_updating)
+        sent = [text for text, _, _ in self.bot.ttclient.messages]
+        self.assertTrue(any("installs the required Python packages" in text for text in sent))
         self.assertEqual(git(self.folder, "rev-parse", "HEAD"), git(self.dev, "rev-parse", "HEAD"))
+
+    def test_the_marker_names_the_version_that_was_running(self):
+        self.publish("Ship it")
+        self.command("", self.user)
+        with open(os.path.join(self.root, "update_success"), encoding="utf-8") as marker:
+            data = json.load(marker)
+        self.assertEqual(data["from_version"], app_vars.app_version)
+        self.assertEqual(len(data["to_commit"]), 7)
 
     def test_failed_install_replies_with_the_reason_and_does_not_restart(self):
         write(os.path.join(self.folder, "feature.txt"), "edited by hand\n")
