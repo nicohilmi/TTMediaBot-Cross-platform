@@ -1413,6 +1413,10 @@ msgstr "Tidak dapat memutar \"{name}\": aliran audio tidak dapat dimuat. Melompa
 msgid "Could not play \"{name}\": the audio stream could not be loaded. Please try again in a moment."
 msgstr "Tidak dapat memutar \"{name}\": aliran audio tidak dapat dimuat. Silakan coba lagi sebentar lagi."
 
+#: bot/player/__init__.py
+msgid "The live stream \"{name}\" has ended."
+msgstr "Siaran langsung \"{name}\" telah berakhir."
+
 #~ msgid "Cannot upload file to channel"
 #~ msgstr "Tidak dapat mengunggah file ke saluran."
 

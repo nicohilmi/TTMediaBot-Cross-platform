@@ -1,6 +1,7 @@
 from __future__ import annotations
 import http.cookiejar
 import logging
+import re
 import time
 import os
 import threading
@@ -17,6 +18,18 @@ from bot.services import Service as _Service
 from bot.services.result_filter import looks_like_collection, pick_single_track_index
 from bot.services.youtube_bridge import YouTubeBridge
 from bot import errors
+
+
+# /@handle/live, /channel/UC.../live, /c/name/live, /user/name/live: "the broadcast this channel has
+# on air right now" (a TV channel, for example). It is one video, not the channel's list of uploads.
+CHANNEL_LIVE_URL = re.compile(
+    r"^https?://(?:www\.|m\.)?youtube\.com/(?:@[^/?#]+|channel/UC[\w-]{22}|c/[^/?#]+|user/[^/?#]+)/live/?(?:[?#].*)?$",
+    re.IGNORECASE,
+)
+
+
+def is_channel_live_url(url: str) -> bool:
+    return bool(url) and CHANNEL_LIVE_URL.match(url.strip()) is not None
 
 
 class YtService(_Service):
@@ -133,7 +146,7 @@ class YtService(_Service):
                 return [Track(service=self.name, url=info.get("webpage_url", url), extra_info=info, type=TrackType.Dynamic)]
 
             lower_url = url.lower() if url else ""
-            if (
+            if not is_channel_live_url(url) and (
                 "list=" in lower_url
                 or "/channel/" in lower_url
                 or "/@" in lower_url
@@ -501,6 +514,8 @@ class YtService(_Service):
         """When one song is wanted, do not play a FULL ALBUM or non stop upload."""
         if limit != 1 or len(entries) != 1:
             return entries
+        if entries[0].get("is_live"):
+            return entries  # a broadcast (a TV channel, a 24/7 stream) is the thing that was asked for
         if not looks_like_collection(entries[0].get("title") or "") or looks_like_collection(query):
             return entries
         try:

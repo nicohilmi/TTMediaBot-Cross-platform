@@ -198,7 +198,8 @@ echo [6/6] Checking FFmpeg and the TeamTalk 5 SDK library...
 echo           Missing pieces are installed or downloaded for you: FFmpeg through winget
 echo           (or Chocolatey / Scoop), the SDK from the official BearWare download page.
 echo           The SDK is a .7z archive: it is downloaded and unpacked in your Temp folder
-echo           and deleted afterwards; only TeamTalk5.dll stays in the bot folder. When
+echo           and deleted afterwards; only TeamTalk5.dll, TeamTalk5.lib and TeamTalk.h
+echo           stay, in the TeamTalk_DLL folder of the bot. When
 echo           nothing on this computer can open .7z files, 7-Zip is installed with winget
 echo           or its portable 7zr.exe is downloaded for the unpacking.
 "venv\Scripts\python.exe" tools\setup_deps.py all
@@ -211,6 +212,10 @@ echo [WARNING] FFmpeg and/or the TeamTalk library still need your attention. Rea
 echo           messages above; they say what to do by hand. The bot cannot start before both
 echo           are in place. Afterwards run this file again, or only this step with:
 echo             venv\Scripts\python.exe tools\setup_deps.py all
+echo           If only the TeamTalk library failed: download the Standard Edition for
+echo           Windows 10/11 x64 in your browser from https://bearware.dk/?page_id=419
+echo           and install that file with:
+echo             venv\Scripts\python.exe tools\setup_deps.py sdk --sdk-file "C:\path\to\tt5sdk_v5.23a_win64.7z"
 
 :finish
 echo.

@@ -11,7 +11,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
+SKIP_REASON = "the deployment scripts (update.sh, auto_updater.sh) are for Linux: run these tests on Linux or in WSL"
+
+
 def find_bash() -> str | None:
+    """The bash the shell-script tests run with; None where they cannot run.
+
+    On Windows the tests are skipped even when a ``bash`` exists: the one in System32
+    starts WSL, which does not see the temporary Windows folders, and Git Bash would need
+    every path translated. They are meant for Linux (or WSL, where os.name is not "nt").
+    """
+    if os.name == "nt":
+        return None
     return shutil.which("bash")
 
 

@@ -1004,6 +1004,29 @@ The version number stays 4.1.2: no command or option was added or removed.
 
 ---
 
+## 🩹 Windows Port — Fixes after 4.2.0 (unreleased, the version number stays 4.2.0): the SDK download that never downloaded, and tests that run on a fresh clone *(10/19/2026)*
+
+### 🐛 Fixed: `TeamTalk5.dll` was never downloaded (`HTTP Error 454`)
+- **🔎 Symptom (install log on a fresh clone):** `could not read https://bearware.dk/?page_id=419: HTTP Error 454:` and then `no download for this system was found on the official site`. Everything else (pip, npm) downloaded fine; only the SDK did not.
+- **✅ The addresses were right.** The official page <https://bearware.dk/?page_id=419> was read again on 19 October 2026: it lists v5.23a (8 April 2026) with the direct link <https://www.bearware.dk/teamtalksdk/v5.23a/tt5sdk_v5.23a_win64.7z> for Windows 10/11 x64, exactly the address the script builds.
+- **🔎 Cause:** `454` is not a standard HTTP status (a filter in front of the site gave it to the script). The script only answered `403`, `406` and `429` with another browser identity and treated every other `4xx` as final, so the page, the two alternative page addresses, the directory listing and the file-name probe all failed on the first answer and no other way was tried. This could not be reproduced here (no access to the site from the test machine); the fix does not depend on which filter it is.
+- **🚀 Fix (`tools/setup_deps.py`):** (1) every `4xx` answer except `404`/`410` means "not you" and is answered with the next browser identity (pause of 0.5 s between them, `Referer` and `Accept-Language` sent); (2) when Python is still refused or cannot connect, the same URL is fetched with the programs of the system, which look different to a filter and use the Windows certificate store: `curl.exe` (Windows 10 1803+), then Windows PowerShell on Windows, `curl` elsewhere (curl is asked again with `--ssl-no-revoke` when Windows reports a revocation-check failure); (3) when the page cannot be read, the file name of the newest known release is downloaded directly from the official site instead of probing it with a `HEAD` request (filters refuse those); a `404` is never asked again with the other programs; (4) the message names every attempt (`HTTP Error 454; curl: HTTP 454; powershell: HTTP 454`) instead of only the first, and the manual steps now include the direct link; (5) **new `--sdk-file`:** `venv\Scripts\python.exe tools\setup_deps.py sdk --sdk-file "C:\path\to\tt5sdk_v5.23a_win64.7z"` installs a `.7z` you downloaded in your browser (unpacked in `%TEMP%`, test-loaded, copied, `.bak` of the old one) without any request.
+- Answers of refused requests are closed, so no socket is left open (a `ResourceWarning` on Python 3.15).
+
+### 🧪 Fixed: the test suite did not run on a fresh clone (and the Windows PC)
+- **`tests/test_setup_deps.py` was missing from the repository** although `tests/test_setup_deps_downloads.py` imports `OFFICIAL_PAGE` and `_Response` from it, so that whole file failed to import. The file is written again: the fixture is a copy of the real link list of the official page, plus tests for page parsing, the choice of the file per system, version order, discovery, FFmpeg plans, the direct-URL fallback (the known file name must equal what the official page lists) and `--sdk-file`.
+- **Every test that imports `bot` needed `TeamTalk5.dll`:** the binding loads the native library at import. On a clone without the SDK (exactly the install log above) 29 test modules failed with `OSError` / `FileNotFoundError`. `tests/__init__.py` now imports the binding with a stand-in for the native library (the real structures and enums stay; the native calls are mocks) and without `os.add_dll_directory` for the SDK folder that a fresh clone does not have (Windows can refuse a missing folder). `TTBOT_TEST_REAL_SDK=1` loads the real DLL instead. No trial banner, no "Trial expired" window, no DLL needed.
+- **`tests/deployment/` (bash scripts of the Linux deployment)** are skipped on Windows with the reason `the deployment scripts ... are for Linux: run these tests on Linux or in WSL`: a `bash.exe` on Windows is WSL, which does not see the temporary Windows folders.
+- **One command before every commit:** `run_tests.bat` (Windows) / `python tools/run_tests.py` runs the Python tests, the Node tests of the YouTube bridge (`node --test`, when Node.js is installed), lists what was skipped and why, checks that the required packages are installed and ends with `ALL TESTS PASSED - it is safe to commit.` or `TESTS FAILED - do not commit yet.`; the exit code is 0 only when everything passed. Options: `-v`, `-k TEXT`, `-f`, `--no-node`.
+- **`.gitattributes`:** `*.bat` are always checked out with CRLF (cmd.exe), `*.sh` always with LF (bash), whatever `core.autocrlf` says; a test checks both. If it reports a `.sh` file with CRLF, run `git add --renormalize .`.
+- New tests: `tests/test_setup_deps.py` (32), `tests/test_setup_deps_clients.py` (40: the second chance of curl and PowerShell, with the real `curl` against a local server that answers `454` to what urllib sends; the PowerShell tests run only on Windows), `tests/test_native_stub.py` (6), `tests/test_run_tests.py` (18); `tests/test_setup_deps_downloads.py` 42 -> 48. The suite has 393 Python tests and 9 Node tests.
+
+### 📁 Files Changed
+- **New:** `run_tests.bat`, `tools/run_tests.py`, `.gitattributes`, `tests/test_setup_deps.py`, `tests/test_setup_deps_clients.py`, `tests/test_native_stub.py`, `tests/test_run_tests.py`.
+- **Changed:** `tools/setup_deps.py`, `install_windows.bat` (what to do when only the SDK failed), `tests/__init__.py`, `tests/test_setup_deps_downloads.py`, `tests/test_logger_early_logging.py`, `tests/deployment/bash_sandbox.py`, `tests/deployment/test_update_runtime.py`, `tests/deployment/test_auto_updater_runtime.py`, `README.md`, `README_WINDOWS.md`, `README_DEVELOPERS_AI.md`, `CHANGELOG.md`.
+
+---
+
 ## 🐍 Windows Port — Version 4.2.0: Python 3.15 Support, Python Installed Through winget, Optional PO-Token Provider Step, UTF-8 Everywhere *(10/17/2026)*
 
 > **Maintained by:** nicohilmi — https://github.com/nicohilmi/TTMediaBot-Cross-platform
@@ -1048,3 +1071,38 @@ The version number stays 4.1.2: no command or option was added or removed.
 ### 📁 Files Changed
 - **New:** `tests/test_python_compat.py`, `tests/test_setup_deps_downloads.py`, `tools/user_agents.txt`.
 - **Changed:** `tools/setup_deps.py`, `bot/app_vars.py`, `bot/utils.py`, `bot/TeamTalk/thread.py`, `bot/config/__init__.py`, `bot/modules/stream_resolvers.py`, `TTMediaBot.py`, `TTMediaBot.bat`, `install_windows.bat`, `README.md`, `README_WINDOWS.md`, `README_DEVELOPERS_AI.md`, `CHANGELOG.md`.
+
+## 📺 Windows Port — Version 4.2.1: TeamTalk SDK in `TeamTalk_DLL`, YouTube Live Streams (TV Channels), Lighter Start on Python 3.15 *(10/20/2026)*
+
+This version also ships the fixes listed above under "Fixes after 4.2.0" (they never got a number of their own).
+
+### 🐛 Fixed: the SDK download put `TeamTalk5.dll` beside `TTMediaBot.py`
+- **🔎 Symptom:** after downloading the TeamTalk SDK, `TeamTalk5.dll` lay in the bot folder next to `TTMediaBot.py` and `TTMediaBot.bat`. The bot itself reads the library from the `TeamTalk_DLL` folder (`TeamTalkPy/TeamTalk5.py`), so the DLL was in the wrong place, and the SDK's other two files were thrown away.
+- **🚀 Fix (`tools/setup_deps.py`):** on Windows the installer now creates `<bot folder>\TeamTalk_DLL` and puts exactly three files of the SDK's `Library\TeamTalk_DLL` folder into it: `TeamTalk5.dll`, `TeamTalk5.lib` and `TeamTalk.h`. Nothing else is copied (no helper DLLs, no documentation), and nothing goes beside `TTMediaBot.py` any more. Linux and macOS are unchanged (`TeamTalk_DLL/libTeamTalk5.so`).
+- **🔁 Coming from 4.2.0:** the next run of `install_windows.bat` (or `venv\Scripts\python.exe tools\setup_deps.py sdk`) moves the `TeamTalk5.dll` that lies beside `TTMediaBot.py` into `TeamTalk_DLL` without a download, fetches the SDK only to complete the folder with the `.lib` and the header, and deletes the old copy and its `.bak`. A stale DLL beside the bot could have been found before the new one, because the binding also searches the current folder.
+- **🛡️ Safe:** the DLL is test-loaded from the temporary folder first and again from `TeamTalk_DLL`; when it does not load there, the previous files are put back and the empty folder is removed. The `.bak` copies are deleted once the new files are verified, so the folder holds only the three SDK files. A complete, up-to-date folder downloads nothing.
+- **📖 Manual steps** (printed when the download fails, and in `README_WINDOWS.md`) now create `TeamTalk_DLL` and copy the three files.
+
+### 📺 New: live streams on YouTube (`yt`, not YouTube Music)
+- **What it does:** play a live broadcast (a TV channel, an event, a 24/7 stream) on the server like any other track: type its title as usual (`p kompas tv live`) or paste the link. The link can be `youtube.com/watch?v=…`, `youtube.com/live/…` or the live page of a channel (`youtube.com/@name/live`, `/channel/UC…/live`, `/c/name/live`, `/user/name/live`), which always leads to what the channel has on air right now.
+- **How (`youtube_bridge/server.mjs`, `youtube_bridge/media.mjs`):** a broadcast has no audio file, YouTube serves it as an HLS playlist. The bridge detects it, reads the master playlist and hands FFmpeg the cheapest variant that carries sound (an audio-only one when there is one), so a 720p picture is not downloaded to play audio. The cache lifetime follows the `/expire/…/` of such links.
+- **Search:** results on air are recognized (`is_live`). When the text asks for a broadcast (`live`, `livestream`, `siaran langsung`, `langsung`, `24/7`) the live results come first, and a live result is never swapped for another video because its title looks like a long upload.
+- **Keeps playing (`bot/player/__init__.py`):** a broadcast is interrupted now and then (connection drops, the link expires after some hours). It is picked up again at the live edge (never at an old position) with 6 attempts (0, 3, 5, 10, 15, 30 s); the count starts over once a stream has played for a minute, so it is not given up after a few hours. When the link leads to the recording, the bot says `The live stream "…" has ended.` and goes on. A broadcast cannot be seeked or downloaded (as before for live tracks).
+- **⚠️ Not testable offline:** the parts that talk to YouTube (reading the HLS link, the live page of a channel) follow the YouTube.js API and the page structure as documented; the playlist parsing, the live detection, the order of results, the retry rules and the end of a broadcast are tested. Please try one broadcast and one `…/@name/live` link and report what the bridge log (`youtube_bridge.log`, lines `resolved live`) says.
+
+### 🐍 Improved: Python 3.15
+- **Lighter start:** `pyshorteners` (and the web libraries it loads) is imported at first use instead of at start (PEP 810 through `__lazy_modules__`, a plain list on older Python versions). The link shortener is off by default, so most bots never load it any more. `bs4` was already lazy.
+- **Checked and left alone:** the audio loop reads fixed frames and already waits with `Popen.wait(timeout=…)`, which Python 3.15 makes event-driven by itself; no `RLock` argument, no `getdefaultlocale`, no removed API is used; the whole bot is not switched to lazy imports (`-X lazy_imports=all`) because `bot/__init__.py` depends on the order of imports (the TeamTalk trial dialog must run before the SDK is loaded); the experimental JIT is not switched on.
+- **`tools/run_tests.py`:** the Node summary showed `(? tests, ? failed)` with newer Node versions; both output styles are read now.
+
+### 🧪 Tests
+- **🆕 `tests/test_live_streams.py`** (16 tests): the live page of a channel is one video, not a playlist; a resolved broadcast is a live track; a live result is never replaced; a stopped broadcast is picked up again at the live edge and not skipped; the count starts over after a minute of playing; it is given up after the last delay without replacing it by another track; the end of a broadcast is reported; an unreachable bridge is asked again after the delay.
+- **🆕 `youtube_bridge/test/media.test.mjs`** (+10 tests): HLS variants, the cheapest variant with sound, the audio-only one, broken playlists, live detection, channel live links, search text, live results, order of results, cache lifetime of HLS links.
+- **Changed:** the SDK tests describe the `TeamTalk_DLL` folder: exactly three files, no extra DLLs, no `.bak` left, the move from the old place, the old copy removed after a verified install and kept when the new one fails, a complete folder downloads nothing, the manual commands. One `run_tests.bat` still runs everything.
+
+### 🔖 Version
+- Raised to **4.2.1** (`bot/app_vars.py`). `config.json` needs no change: no setting was added, so `CONFIG_VERSION` stays 2.
+
+### 📁 Files Changed
+- **New:** `tests/test_live_streams.py`.
+- **Changed:** `tools/setup_deps.py`, `tools/run_tests.py`, `bot/app_vars.py`, `bot/player/__init__.py`, `bot/services/yt.py`, `bot/modules/shortener.py`, `youtube_bridge/server.mjs`, `youtube_bridge/media.mjs`, `youtube_bridge/test/media.test.mjs`, `install_windows.bat`, `README.md`, `README_WINDOWS.md`, `locale/TTMediaBot.pot`, `locale/id/LC_MESSAGES/TTMediaBot.po`, `locale/id/LC_MESSAGES/TTMediaBot.mo`, `tests/test_setup_deps.py`, `tests/test_setup_deps_downloads.py`, `tests/test_python_compat.py`, `tests/test_run_tests.py`, `CHANGELOG.md`.

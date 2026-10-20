@@ -35,7 +35,7 @@ def load_logger_module():
 
 class LoggerTests(TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
+        self.tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.root = logging.getLogger()
         self.saved_handlers = list(self.root.handlers)
         self.saved_level = self.root.level

@@ -76,6 +76,22 @@ class SourceCompatibilityTests(unittest.TestCase):
             with self.subTest(file=where(path, ast.Pass())):
                 ast.parse(path.read_text(encoding="utf-8"), feature_version=(3, 10))
 
+    def test_libraries_that_most_bots_never_use_are_loaded_lazily(self):
+        # pyshorteners belongs to a feature that is off by default; bs4 is only needed when a
+        # web page has to be read. On Python 3.15 they are loaded at first use.
+        expected = {
+            "bot/modules/shortener.py": "pyshorteners",
+            "bot/modules/stream_resolvers.py": "bs4",
+        }
+        for name, library in expected.items():
+            with self.subTest(file=name):
+                tree = ast.parse((ROOT / name).read_text(encoding="utf-8"))
+                declared = []
+                for node in tree.body:
+                    if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "__lazy_modules__" for t in node.targets):
+                        declared = [c.value for c in node.value.elts if isinstance(c, ast.Constant)]
+                self.assertIn(library, declared)
+
     def test_the_lazy_keyword_is_not_used(self):
         # Only __lazy_modules__ is allowed: it is a plain list on older versions.
         pattern = re.compile(r"^\s*lazy\s+(import|from)\b", re.MULTILINE)

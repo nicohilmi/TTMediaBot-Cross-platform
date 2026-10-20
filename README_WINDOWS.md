@@ -88,7 +88,16 @@ You can also use **Code → Download ZIP** on GitHub and extract it. Keep the fo
 
 ### Step 3 — Add the TeamTalk library
 
-`install_windows.bat` (Step 4) downloads the newest stable TeamTalk 5 SDK from the official BearWare page <https://bearware.dk/?page_id=419> and copies the **64-bit** `TeamTalk5.dll` into the bot folder, right beside `TTMediaBot.py`; it test-loads the DLL first and keeps your previous one as `TeamTalk5.dll.bak`. The archive and the unpacked SDK live in a temporary folder inside your Windows `Temp` folder (`%TEMP%`) and are deleted afterwards; only `TeamTalk5.dll` stays in the bot folder. The SDK's `Library\TeamTalk_DLL` folder holds the DLL, `TeamTalk5.lib` and a C header; the bot only needs the DLL (`.lib` and header are for C/C++ developers; any other DLL found in that folder is copied with it, and the copy is test-loaded from the bot folder before it is kept, otherwise your previous file is put back).
+`install_windows.bat` downloads the newest stable TeamTalk 5 SDK from the official BearWare page <https://bearware.dk/?page_id=419> and puts the files the bot needs into the **`TeamTalk_DLL` folder inside the bot folder** (for example `D:\root\TTMediaBot\TeamTalk_DLL`), exactly three files and nothing beside `TTMediaBot.py`:
+
+```text
+TeamTalk_DLL\
+├── TeamTalk5.dll    64-bit library (the bot loads this one)
+├── TeamTalk5.lib    import library of the SDK
+└── TeamTalk.h       C header of the SDK
+```
+
+The DLL is test-loaded from the temporary folder first and again from `TeamTalk_DLL`; when it does not load there, your previous files are put back and nothing half-installed stays. The archive and the unpacked SDK live in a temporary folder inside your Windows `Temp` folder and are deleted afterwards, with every other file of the SDK (documentation, examples, other languages). **Coming from 4.2.0:** that version copied `TeamTalk5.dll` beside `TTMediaBot.py`. The next run of the installer (or `venv\Scripts\python.exe tools\setup_deps.py sdk`) moves that DLL into `TeamTalk_DLL` without a download, completes the folder with the `.lib` and the header, and deletes the old copy (a stale one beside the bot could be found before the new one). The bot only needs the DLL; the `.lib` and the header are for C/C++ developers. SDK 5.11 or newer is required for the virtual sound device. BearWare distributes the SDK download as a 30 day trial.
 
 **7-Zip.** The SDK is a `.7z` archive. The installer opens it with 7-Zip when it is installed, then with `tar.exe` of Windows 10/11. When nothing can open it, it installs 7-Zip with `winget install --id 7zip.7zip` and, when winget is missing or fails, downloads the portable `7zr.exe` from 7-zip.org into the temporary folder (nothing is installed and the file is deleted with the folder).
 
@@ -97,10 +106,15 @@ You can also use **Code → Download ZIP** on GitHub and extract it. Keep the fo
 If the installer cannot do it (no internet, the page changed), it prints the manual steps: download the *Standard Edition* for *Windows 10/11 x64*, then in a command window:
 ```bat
 7z x -y -o"%TEMP%\ttsdk" tt5sdk_*_win64.7z
-copy "%TEMP%\ttsdk\Library\TeamTalk_DLL\TeamTalk5.dll" "D:\TTMediaBot-master"
+if not exist "D:\TTMediaBot-master\TeamTalk_DLL" mkdir "D:\TTMediaBot-master\TeamTalk_DLL"
+copy "%TEMP%\ttsdk\Library\TeamTalk_DLL\TeamTalk5.dll" "D:\TTMediaBot-master\TeamTalk_DLL"
+copy "%TEMP%\ttsdk\Library\TeamTalk_DLL\TeamTalk5.lib" "D:\TTMediaBot-master\TeamTalk_DLL"
+copy "%TEMP%\ttsdk\Library\TeamTalk_DLL\TeamTalk.h" "D:\TTMediaBot-master\TeamTalk_DLL"
 rmdir /s /q "%TEMP%\ttsdk"
 ```
-(use your own bot folder in the second line; if the file is not at that path, find it with `dir /s /b "%TEMP%\ttsdk\TeamTalk5.dll"`). Run only this step again with `venv\Scripts\python.exe tools\setup_deps.py sdk` (`--force` fetches it again). SDK 5.11 or newer is required for the virtual sound device. BearWare distributes the SDK download as a 30 day trial. The bot also looks in a `TeamTalk_DLL\` folder inside the bot folder.
+(use your own bot folder in the `mkdir` and `copy` lines; if the file is not at that path, find it with `dir /s /b "%TEMP%\ttsdk\TeamTalk5.dll"`). Run only this step again with `venv\Scripts\python.exe tools\setup_deps.py sdk` (`--force` fetches it again).
+
+**When the download fails** (the message lists every attempt, for example `HTTP Error 454` from the site's bot filter): the installer asks the site again with other browser identities and then with the programs of Windows itself (`curl.exe`, then PowerShell), and finally tries the file name of the newest release it knows directly, for example <https://www.bearware.dk/teamtalksdk/v5.23a/tt5sdk_v5.23a_win64.7z>. If all of that is refused, download the Standard Edition for Windows 10/11 x64 from <https://bearware.dk/?page_id=419> in your browser and let the installer do the unpacking, test-loading and copying: `venv\Scripts\python.exe tools\setup_deps.py sdk --sdk-file "C:\Users\you\Downloads\tt5sdk_v5.23a_win64.7z"`. SDK 5.11 or newer is required for the virtual sound device. BearWare distributes the SDK download as a 30 day trial. The bot also looks in a `TeamTalk_DLL\` folder inside the bot folder.
 
 ### Step 4 — Run the installer
 
@@ -117,7 +131,7 @@ You can also double-click the file. The installer prints a message for each step
 | 3 | Installs the YouTube.js bridge in `youtube_bridge\` with `npm install --omit=dev`. Needs Node.js and Git. |
 | 4 | **Asks whether to install the PO-token provider** (`Y` or `N`, then Enter). On `Y` it clones the provider into `bgutil-provider\` and builds it (`npm ci`, `npx tsc`); this can take a few minutes. On `N`, steps 4 and 5 are skipped. |
 | 5 | Starts the PO-token provider in a **second window** on port `4416`. Keep that window open while the bot runs. Skipped when you answered `N`. |
-| 6 | Checks that FFmpeg and `TeamTalk5.dll` are available and installs what is missing: FFmpeg through winget, the SDK from BearWare (unpacked in `%TEMP%`, with 7-Zip installed or a portable `7zr.exe` when nothing else can open the `.7z`). A warning is printed for each piece that could not be set up. |
+| 6 | Checks that FFmpeg and `TeamTalk5.dll` are available and installs what is missing: FFmpeg through winget, the SDK from BearWare (unpacked in `%TEMP%`, with 7-Zip installed or a portable `7zr.exe` when nothing else can open the `.7z`; `TeamTalk5.dll`, `TeamTalk5.lib` and `TeamTalk.h` go into the bot's `TeamTalk_DLL` folder). A warning is printed for each piece that could not be set up. |
 
 **Why step 4 asks.** One PO-token provider listening on port `4416` is enough for every bot on the computer. If you already installed or started it for another bot, answer `N`: nothing is installed again and no new window is opened. When something already answers on port `4416` the installer says so and `N` is the default (just press Enter); otherwise `Y` is the default. For a run without questions use `install_windows.bat --pot` (install and start) or `install_windows.bat --no-pot` (skip steps 4 and 5).
 
@@ -151,7 +165,7 @@ TTMediaBot-Cross-platform\
 ├── TTMediaBot.bat           starts the bot
 ├── install_windows.bat      installer
 ├── config.json              your settings
-├── TeamTalk5.dll            you copy this in (step 3)
+├── TeamTalk_DLL\            TeamTalk5.dll, TeamTalk5.lib, TeamTalk.h (installed by install_windows.bat, step 3)
 ├── ffmpeg.exe               optional, if not installed system-wide
 ├── venv\                    Python environment (created by the installer)
 ├── youtube_bridge\          YouTube.js bridge (node_modules\ is created by the installer)
@@ -759,14 +773,22 @@ Start it again (see [Starting the PO-token provider again](#starting-the-po-toke
 
 ### Running the tests
 
-All Python tests are in the `tests` folder. From the bot folder:
+**Run this before every `git commit`.** From the bot folder:
+
+```powershell
+run_tests.bat
+```
+
+It runs every test in the `tests` folder (about 370) and the Node.js tests of the YouTube bridge (`youtube_bridge\test`, when Node.js is installed) and ends with one line: `ALL TESTS PASSED - it is safe to commit.` or `TESTS FAILED - do not commit yet.` (the exit code is 0 only when everything passed). `run_tests.bat -v` prints one line per test, `run_tests.bat -k fade` runs only the tests whose name contains `fade`, `run_tests.bat -f` stops at the first failure. If packages are missing it says which and how to install them.
+
+The tests do not need the internet, a TeamTalk server or `TeamTalk5.dll`: they load the bot with a stand-in for the native library (`tests\__init__.py`; set `TTBOT_TEST_REAL_SDK=1` to load the real DLL instead). Lines that start with `WARNING:` or `ERROR:` while the tests run are log messages of tests that exercise failure paths on purpose; only the result at the end counts. Tests that cannot run on Windows are listed at the end as skipped with their reason (the bash scripts of the Linux deployment, and the real `curl`/PowerShell download tests only where those programs exist). The same as plain `unittest`:
 
 ```powershell
 venv\Scripts\python.exe -m unittest discover -s tests -t . -v
 venv\Scripts\python.exe -m unittest tests.test_ai_manager -v
 ```
 
-The first line runs everything, the second a single file. Some tests need Git, and the deployment tests need a Linux shell, so they skip themselves when it is missing.
+The first line runs everything, the second a single file. Some tests need Git (the update tests) and FFmpeg (the audio tests), and skip themselves when it is missing.
 
 ---
 

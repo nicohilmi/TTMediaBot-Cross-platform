@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import unittest
 
-from tests.deployment.bash_sandbox import BashSandbox, ROOT, find_bash
+from tests.deployment.bash_sandbox import BashSandbox, ROOT, SKIP_REASON, find_bash
 
 
-@unittest.skipUnless(find_bash(), "bash is required")
+@unittest.skipUnless(find_bash(), SKIP_REASON)
 class UpdateRuntimeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.sandbox = BashSandbox()

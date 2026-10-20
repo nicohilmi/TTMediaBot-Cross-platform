@@ -1,3 +1,8 @@
+# Python 3.15 (PEP 810) loads pyshorteners (and the web libraries it pulls in) only when a link
+# is shortened. It is off by default, so most bots never pay for it; older Python versions
+# treat this line as a plain list and import it at once, as before.
+__lazy_modules__ = ["pyshorteners"]
+
 import logging
 
 import pyshorteners

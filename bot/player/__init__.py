@@ -10,6 +10,7 @@ from bot import errors, ffmpeg_locator
 from bot.player.enums import Mode, State, TrackType
 from bot.player.ffmpeg_engine import (
     AudioSink,
+    END_EOF,
     END_ERROR,
     FADE_SUPERSEDED,
     FFmpegEngine,
@@ -37,6 +38,12 @@ RESUME_AFTER_ERROR_MIN_SECONDS = 3.0
 # YouTube can refuse a fresh media URL (HTTP 403) for a few seconds on some videos;
 # yt-dlp sleeps for the same reason. After the last retry the track is given up.
 STREAM_RETRY_DELAYS = (0.0, 3.0, 5.0)
+
+# A live broadcast (a TV channel, an event) is expected to be interrupted now and then: the
+# playlist link expires after some hours and the connection drops. It is picked up again for as
+# long as it keeps coming back; the count starts over once the stream has played for a while.
+LIVE_STREAM_RETRY_DELAYS = (0.0, 3.0, 5.0, 10.0, 15.0, 30.0)
+LIVE_STREAM_HEALTHY_SECONDS = 60.0
 
 
 class TeamTalkAudioSink(AudioSink):
@@ -648,8 +655,14 @@ class Player:
     def on_end_file(self, reason: str, error: str = "") -> None:
         """Called by the FFmpeg engine (on its own thread) when a stream ends
         by itself: ``eof`` for a normal end, ``error`` when it failed."""
-        if reason == END_ERROR and self.track.service in ("yt", "ytm"):
-            if self._retry_failed_stream(error):
+        live = self._is_live_stream(self.track)
+        # A live stream does not end by itself: FFmpeg stops when the connection drops, when the
+        # playlist link expires or when the broadcast is over, so a normal end (eof) counts too.
+        if (reason == END_ERROR or (reason == END_EOF and live)) and self.track.service in ("yt", "ytm"):
+            if live and not error:
+                error = "the live stream stopped"
+            played = self._engine.last_position if live else None
+            if self._retry_failed_stream(error, played=played):
                 return
             if self.state == State.Playing and not getattr(self, "_fading_out", False):
                 # Out of retries. Never move on silently: the chat already said
@@ -680,8 +693,17 @@ class Player:
                 except errors.NoNextTrackError:
                     self.stop()
 
-    def _retry_failed_stream(self, error: str) -> bool:
+    @staticmethod
+    def _is_live_stream(track: Track) -> bool:
+        return track.type == TrackType.Live and track.service in ("yt", "ytm")
+
+    def _retry_failed_stream(self, error: str, played: Optional[float] = None) -> bool:
         """Schedule the next retry of a failed YouTube stream.
+
+        ``played`` is how many seconds the stream played before it stopped (only given when the
+        engine reported the stop). A live stream that played for a while before stopping starts
+        a new count, so a broadcast that is interrupted twice a day is never given up; one that
+        keeps failing right away is, after the last delay.
 
         Returns True when a retry was started or scheduled, False when playback
         was stopped meanwhile or every retry has been used.
@@ -689,20 +711,25 @@ class Player:
         track = self.track
         if self.state != State.Playing or getattr(self, "_fading_out", False):
             return False
+        live = self._is_live_stream(track)
+        delays = LIVE_STREAM_RETRY_DELAYS if live else STREAM_RETRY_DELAYS
         done = getattr(track, "_stream_retry_count", None)
         if done is None:
             done = 1 if getattr(track, "_stream_refresh_attempted", False) else 0
-        if done >= len(STREAM_RETRY_DELAYS):
+        if live and played is not None and played >= LIVE_STREAM_HEALTHY_SECONDS:
+            done = 0
+        if done >= len(delays):
             return False
-        delay = STREAM_RETRY_DELAYS[done]
+        delay = delays[done]
         track._stream_refresh_attempted = True
         track._stream_retry_count = done + 1
-        resume_at = self._engine.last_position
+        # A live stream has no position to return to: it goes on where the broadcast is now.
+        resume_at = 0.0 if live else self._engine.last_position
         if resume_at < RESUME_AFTER_ERROR_MIN_SECONDS:
             resume_at = 0.0
         logging.warning(
             "[PlaybackTiming] youtube_stream_refresh_started "
-            f"track={track.name!r} attempt={done + 1}/{len(STREAM_RETRY_DELAYS)} "
+            f"track={track.name!r} attempt={done + 1}/{len(delays)} "
             f"delay={delay:.1f}s error={error[:200]!r}"
         )
         token = getattr(self, "_play_token", 0)
@@ -724,8 +751,15 @@ class Player:
         ):
             logging.debug("[Player] stream retry dropped: playback changed meanwhile")
             return
+        was_live = self._is_live_stream(track)
         try:
             refreshed_url = track.refresh_stream()
+            if was_live and track.type != TrackType.Live:
+                # The link now leads to the recording of the broadcast: it is over.
+                logging.info(f"[Player] live stream ended: {track.name!r}")
+                self._notify_live_ended(track)
+                self._advance_after_track_end()
+                return
             self._play(
                 refreshed_url,
                 save_to_recents=False,
@@ -737,6 +771,8 @@ class Player:
                 "[PlaybackTiming] youtube_stream_refresh_failed "
                 f"track={track.name!r} error={refresh_error!r}"
             )
+            if was_live and self._retry_failed_stream(str(refresh_error)):
+                return  # a broadcast that is not reachable for a moment is asked for again
             if self._give_up_on_stream(track, str(refresh_error)):
                 self._advance_after_track_end()
 
@@ -758,6 +794,13 @@ class Player:
             self.stop()
             return False
         return True
+
+    def _notify_live_ended(self, track: Track) -> None:
+        try:
+            text = self.bot.translator.translate('The live stream "{name}" has ended.')
+            self.bot.ttclient.send_message(text.format(name=track.name), type=2)
+        except Exception:
+            logging.debug("[Player] could not announce the end of the live stream", exc_info=True)
 
     def _notify_unplayable(self, track: Track, skipping: bool) -> None:
         try:

@@ -1266,3 +1266,7 @@ msgstr ""
 #: bot/player/__init__.py
 msgid "Could not play \"{name}\": the audio stream could not be loaded. Please try again in a moment."
 msgstr ""
+
+#: bot/player/__init__.py
+msgid "The live stream \"{name}\" has ended."
+msgstr ""

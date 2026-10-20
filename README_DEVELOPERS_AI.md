@@ -200,8 +200,9 @@ wrong (symptom), the cause, what changed, which tests were added. No marketing w
 
 - [ ] The change fixes the one bug you described, and nothing else.
 - [ ] A test fails without the change and passes with it.
-- [ ] `python -m unittest discover -s tests -t .` passes (the tests need the TeamTalk
-      library, `pydantic` and the other requirements installed).
+- [ ] `python tools/run_tests.py` (Windows: `run_tests.bat`) ends with ALL TESTS PASSED.
+      The tests need `pydantic` and the other requirements installed, but not the TeamTalk
+      library (`tests/__init__.py` loads the bot with a stand-in for it).
 - [ ] New user-visible strings are translated and the `.mo` files are compiled.
 - [ ] `CHANGELOG.md` says what changed, and the version in `bot/app_vars.py` is only
       raised when a release is intended.

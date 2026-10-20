@@ -1,0 +1,3 @@
+# cmd.exe needs CRLF in batch files, bash needs LF in shell scripts, on every clone.
+*.bat text eol=crlf
+*.sh text eol=lf

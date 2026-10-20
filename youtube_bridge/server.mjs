@@ -5,7 +5,18 @@ import path from 'node:path';
 import { URL, fileURLToPath } from 'node:url';
 import { ClientType, Innertube, UniversalCache, Platform } from 'youtubei.js';
 import { ExpiringLruCache } from './cache.mjs';
-import { musicItemPayload, normalizeSearchKey, streamCacheTtlMs } from './media.mjs';
+import {
+  isChannelLiveUrl,
+  isLiveRenderer,
+  isVideoId,
+  liveStreamInfo,
+  musicItemPayload,
+  normalizeSearchKey,
+  parseHlsMaster,
+  pickHlsVariant,
+  preferLiveEntries,
+  streamCacheTtlMs
+} from './media.mjs';
 
 // --- log timestamps begin ---
 // Every line gets a local-time stamp in the same format as TTMediaBot.log, so the two
@@ -401,6 +412,55 @@ function playabilityDescription(info) {
   return reason ? `${status}: ${reason}` : status;
 }
 
+async function fetchPlaylistText(url, timeoutMs) {
+  const response = await fetch(url, {
+    headers: { 'User-Agent': USER_AGENT },
+    signal: AbortSignal.timeout(timeoutMs)
+  });
+  if (!response.ok) throw new Error(`HLS manifest HTTP ${response.status}`);
+  return response.text();
+}
+
+// A live broadcast is an HLS playlist. Its master lists every quality (usually with the picture
+// too); only sound is needed, so the cheapest variant that has sound is handed to FFmpeg
+// (otherwise it may pick the biggest one and download a 720p video just to play audio).
+// Some players append the PO token to the manifest path; that is tried only when the plain
+// link is refused.
+async function liveVariantUrl(manifestUrl, poToken) {
+  const candidates = [manifestUrl];
+  if (poToken) candidates.push(`${manifestUrl.replace(/\/+$/, '')}/pot/${encodeURIComponent(poToken)}`);
+  const timeoutMs = Number(process.env.YOUTUBE_BRIDGE_PLAYER_TIMEOUT_MS || 8000);
+  let lastError = null;
+  for (const candidate of candidates) {
+    try {
+      const text = await fetchPlaylistText(candidate, timeoutMs);
+      const picked = pickHlsVariant(parseHlsMaster(text, candidate));
+      if (picked) return picked.url;
+      if (/^#EXTINF:/m.test(text)) return candidate; // already a media playlist
+      lastError = new Error('HLS manifest has no variant with sound');
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('HLS manifest could not be read');
+}
+
+async function resolveChannelLiveVideoId(url, cookieFile) {
+  const session = await getWebSession(cookieFile);
+  const endpoint = await session.resolveURL(url.trim());
+  const videoId = endpoint?.payload?.videoId || endpoint?.endpoint?.payload?.videoId;
+  if (isVideoId(videoId)) return videoId;
+  throw new Error('This channel is not broadcasting live right now');
+}
+
+// The video of a request: the id, a link to the video, or the live page of a channel.
+async function videoIdFromRequest(body) {
+  const direct = body.video_id || extractVideoId(body.url);
+  if (direct) return direct;
+  if (isChannelLiveUrl(body.url)) return resolveChannelLiveVideoId(body.url, body.cookie_file);
+  return null;
+}
+
 async function resolveFormat(context, videoId, requestedClient, formatOptions) {
   // WEB is SABR-only for many videos in 2026. MWEB still exposes classic
   // adaptive formats and is the preferred web playback client here.
@@ -424,6 +484,20 @@ async function resolveFormat(context, videoId, requestedClient, formatOptions) {
       console.log(`[youtube-bridge-timing] video=${videoId} client=${client} stage=player elapsed_ms=${Math.round(performance.now() - playerStartedAt)} status=${info?.playability_status?.status || 'UNKNOWN'}`);
       if (!info?.streaming_data) {
         throw new Error(`no streaming data (${playabilityDescription(info)})`);
+      }
+
+      const liveStream = liveStreamInfo(info);
+      if (liveStream.live) {
+        if (!liveStream.hlsUrl) throw new Error('live stream without an HLS manifest');
+        const liveStartedAt = performance.now();
+        const url = await liveVariantUrl(liveStream.hlsUrl, poToken);
+        console.log(`[youtube-bridge] resolved live ${videoId} with client=${client} elapsed_ms=${Math.round(performance.now() - liveStartedAt)}`);
+        return {
+          info,
+          format: { url, itag: 'hls', mime_type: 'application/vnd.apple.mpegurl', has_audio: true, has_video: true },
+          client,
+          live: true
+        };
       }
 
       const formatStartedAt = performance.now();
@@ -456,7 +530,7 @@ async function resolveFormat(context, videoId, requestedClient, formatOptions) {
 
 async function resolveTrack(body) {
   const startedAt = performance.now();
-  const videoId = body.video_id || extractVideoId(body.url);
+  const videoId = await videoIdFromRequest(body);
   if (!videoId) throw new Error('Invalid YouTube URL or video ID');
   const requestedClient = body.client === 'YTMUSIC' ? 'YTMUSIC' : 'MWEB';
   const cacheKey = `${cookieFileKey(body.cookie_file)}:${requestedClient}:${videoId}`;
@@ -504,7 +578,7 @@ function invalidateResolution(body) {
 async function resolveTrackUncached(body, videoId, requestedClient) {
   const context = await getSession(body.cookie_file);
 
-  const { info, format, client } = await resolveFormat(context, videoId, requestedClient, {
+  const { info, format, client, live } = await resolveFormat(context, videoId, requestedClient, {
     type: 'audio',
     quality: 'best',
     format: 'any'
@@ -515,13 +589,14 @@ async function resolveTrackUncached(body, videoId, requestedClient) {
     ...metadata,
     ...formatPayload(format),
     client,
-    format: 'mp3',
+    is_live: Boolean(live) || metadata.is_live,
+    format: live ? 'hls' : 'mp3',
     http_headers: { 'User-Agent': USER_AGENT }
   };
 }
 
 async function getInfo(body) {
-  const videoId = body.video_id || extractVideoId(body.url);
+  const videoId = await videoIdFromRequest(body);
   if (!videoId) throw new Error('Invalid YouTube URL or video ID');
   const context = await getSession(body.cookie_file);
   const client = body.client === 'YTMUSIC' ? 'YTMUSIC' : 'MWEB';
@@ -605,7 +680,7 @@ async function searchVideos(body) {
   const cached = searchCache.get(cacheKey);
   if (cached) {
     console.log(`[youtube-bridge] search cache hit mode=${mode} query="${query}" elapsed_ms=${Math.round(performance.now() - startedAt)}`);
-    return { entries: cached.slice(0, limit) };
+    return { entries: preferLiveEntries(cached, query).slice(0, limit) };
   }
 
   const entries = await searchCache.getOrCreate(cacheKey, SEARCH_CACHE_TTL_MS, async () => {
@@ -661,6 +736,7 @@ async function searchVideos(body) {
               videoId: v.videoId,
               title: title || 'Unknown Title',
               uploader: uploader || '',
+              is_live: isLiveRenderer(v),
               webpage_url: `https://www.youtube.com/watch?v=${v.videoId}`
             });
           }
@@ -686,13 +762,14 @@ async function searchVideos(body) {
       videoId: video.id || video.videoId,
       title: textValue(video.title),
       uploader: textValue(video.author?.name || video.author?.text || video.author),
+      is_live: Boolean(video.is_live),
       webpage_url: (video.id || video.videoId) ? `https://www.youtube.com/watch?v=${video.id || video.videoId}` : ''
     })).filter((video) => video.id);
   });
   console.log(`[youtube-bridge] searched mode=${mode} query="${query}" in ${Math.round(performance.now() - startedAt)}ms cache_entries=${searchCache.size}`);
   scheduleSaveDiskCache();
 
-  const results = entries.slice(0, limit);
+  const results = preferLiveEntries(entries, query).slice(0, limit);
   if (limit === 1 && results.length > 0) {
     const topVideoId = results[0].videoId || results[0].id;
     if (topVideoId) {

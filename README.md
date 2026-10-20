@@ -139,7 +139,7 @@ The bot no longer uses `mpv`/`libmpv` or PulseAudio. **FFmpeg** decodes every fi
 
 1. **64-bit Python 3.15** is recommended (3.10 or newer still works). `install_windows.bat` installs it for you when no suitable Python is found: it runs `winget install 9NQ7512CXL7T --accept-package-agreements` (the Python install manager) and then `py install 3.15`. By hand, run those two commands in a terminal.
 2. FFmpeg: `install_windows.bat` checks for it and installs it with winget (`winget install --id Gyan.FFmpeg -e`), Chocolatey or Scoop when it is missing. By hand: use one of those, or download a build from <https://www.gyan.dev/ffmpeg/builds/> / <https://github.com/BtbN/FFmpeg-Builds> and copy `ffmpeg.exe` next to `TTMediaBot.py`.
-3. TeamTalk SDK: `install_windows.bat` downloads the newest stable 64-bit SDK from <https://bearware.dk/?page_id=419> and puts `TeamTalk5.dll` next to `TTMediaBot.py`. SDK 5.11 or newer is required for the virtual sound device. To redo only this step: `venv\Scripts\python.exe tools\setup_deps.py all` (add `--force` to fetch the SDK again, `--check` to only report). The SDK (a `.7z` archive) is unpacked in the Windows `Temp` folder and deleted afterwards; 7-Zip is installed through winget, or a portable `7zr.exe` is downloaded, when nothing on the computer can open it. Browser identities for the downloads are in `tools\user_agents.txt`. BearWare distributes the SDK download as a 30 day trial.
+3. TeamTalk SDK: `install_windows.bat` downloads the newest stable 64-bit SDK from <https://bearware.dk/?page_id=419> and puts `TeamTalk5.dll`, `TeamTalk5.lib` and `TeamTalk.h` (nothing else) into the `TeamTalk_DLL` folder of the bot, not next to `TTMediaBot.py`. SDK 5.11 or newer is required for the virtual sound device. To redo only this step: `venv\Scripts\python.exe tools\setup_deps.py all` (add `--force` to fetch the SDK again, `--check` to only report). The SDK (a `.7z` archive) is unpacked in the Windows `Temp` folder and deleted afterwards; 7-Zip is installed through winget, or a portable `7zr.exe` is downloaded, when nothing on the computer can open it. Browser identities for the downloads are in `tools\user_agents.txt`. BearWare distributes the SDK download as a 30 day trial.
 4. For YouTube / YouTube Music install **Node.js LTS** and **Git** (`winget install OpenJS.NodeJS.LTS`, `winget install Git.Git`).
 5. Run `install_windows.bat` (creates `venv`, installs the requirements and the YouTube bridge), edit `config.json`, then start the bot with `TTMediaBot.bat`. Step 4 of the installer (the PO-token provider) asks whether to install it: one provider on port `4416` serves every bot on the computer, so answer **N** when another bot already has it (steps 4 and 5 are then skipped). `install_windows.bat --no-pot` / `--pot` answer for you.
 
@@ -844,9 +844,12 @@ Bridge-side cache hits, misses, pending-resolution joins, selected clients, and 
 All Python tests are in the `tests` folder (the Node.js tests of the YouTube bridge stay in `youtube_bridge/test`). From the bot folder:
 
 ```bash
-python -m unittest discover -s tests -t . -v      # everything
+python tools/run_tests.py                          # everything (Windows: run_tests.bat), run it before every commit
+python -m unittest discover -s tests -t . -v      # the Python tests only
 python -m unittest tests.test_ai_manager -v       # one file
 ```
+
+The tests do not need the TeamTalk library, a server or the internet.
 
 ---
 
