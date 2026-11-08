@@ -1106,3 +1106,47 @@ This version also ships the fixes listed above under "Fixes after 4.2.0" (they n
 ### 📁 Files Changed
 - **New:** `tests/test_live_streams.py`.
 - **Changed:** `tools/setup_deps.py`, `tools/run_tests.py`, `bot/app_vars.py`, `bot/player/__init__.py`, `bot/services/yt.py`, `bot/modules/shortener.py`, `youtube_bridge/server.mjs`, `youtube_bridge/media.mjs`, `youtube_bridge/test/media.test.mjs`, `install_windows.bat`, `README.md`, `README_WINDOWS.md`, `locale/TTMediaBot.pot`, `locale/id/LC_MESSAGES/TTMediaBot.po`, `locale/id/LC_MESSAGES/TTMediaBot.mo`, `tests/test_setup_deps.py`, `tests/test_setup_deps_downloads.py`, `tests/test_python_compat.py`, `tests/test_run_tests.py`, `CHANGELOG.md`.
+
+
+## 📺 Windows Port — Fixes after 4.2.x (unreleased, the version number is yours to set): YouTube Broadcasts That "Played" Silence While FFmpeg Printed `HTTP error 403 Forbidden` *(10/26/2026)*
+
+Reported by Nico Hilmi with `TTMediaBot.log` and `youtube_bridge.log` of 10/25/2026 (`yt`, link `youtube.com/live/PDDOkUq33Sw`).
+
+### 🐛 Fixed: a broadcast that never produced any sound
+- **🔎 Symptom:** `u <live link>` answered, the bot looked busy, nothing was heard, and `TTMediaBot.log` showed `HTTP error 403 Forbidden` from FFmpeg every ~5 s until somebody typed `s`. The log never showed `Stream #0 … Audio`/`file-loaded` for that track (a normal track does).
+- **🧬 Cause 1 (`youtube_bridge/server.mjs`):** the PO token was available (`available=true`) but the playlist link was read *without* it and only tried *with* it when the plain link was refused. YouTube serves the playlist (HTTP 200) with or without the token, but refuses the media segments listed in it (HTTP 403) when the token is not in the link. FFmpeg then skips segment after segment, never fails and delivers no audio. yt-dlp does it the other way round: with a token, the token is always added to the manifest link (`…/index.m3u8/pot/<token>`).
+- **🧬 Cause 2 (cache):** the bridge reported such a link as `resolved live` without ever fetching a segment, kept it for up to an hour, and saved it in `bridge_cache.json`. Every retry, and every restart of the bot, then got the same dead link back (`resolve cache hit` in `youtube_bridge.log`) — which is why nothing helped.
+- **🧬 Cause 3 (`bot/player/ffmpeg_engine.py`):** FFmpeg stays alive in this situation, so the end callback that makes the player ask for a fresh link (and retry up to 6 times, then tell the chat) was never called.
+- **🚀 Fix 1 (`youtube_bridge/live.mjs`, new):** the PO token goes into the manifest link first, the plain link is the second try. A link is handed over only after its newest segment has been fetched (`verified`). The log says which one worked: `resolved live … via=with-pot verified (segment HTTP 206)`, or why not: `live link refused (with-pot: segment HTTP 403; plain: segment HTTP 403)`.
+- **🚀 Fix 2 (`youtube_bridge/server.mjs`):** when the first client cannot give a playable link, the others are asked once each (`MWEB`, `TV_EMBEDDED`, `WEB`, `ANDROID`; a client this YouTube.js does not know only adds its reason). If nothing can be verified, the first link is still handed to FFmpeg, flagged `unverified` and not cached. Broadcast links are cached for 10 minutes at most and never saved to disk; the disk cache has a version now (`DISK_CACHE_VERSION = 2`), so links saved by an older version are dropped at the first start.
+- **🚀 Fix 3 (`bot/player/ffmpeg_engine.py`):** a playlist (HLS) stream is given up on, and reported as a failed stream, when the server refuses it three times before any audio, or when no audio has arrived 25 s after the start. The player then does what it already did for a stream that fails: new link, up to 6 tries, then a message in the channel. Normal tracks are not touched by this rule.
+- **ℹ️ Not a fault:** `[YOUTUBEJS][Parser]: InnertubeError: LiveBadge not found!` in `youtube_bridge.log` is a harmless notice of YouTube.js about a new element of the recommendations; the request still ends with `status=200`.
+- **⚠️ Not testable offline:** whether YouTube accepts the token for this account right now. The new log lines show it either way.
+
+### 🧪 Tests
+- **🆕 `youtube_bridge/test/live.test.mjs`** (5 tests, local HTTP server that serves playlists but refuses segments without the token): token first, link verified, refused segments are not handed over as good, fallback to the plain link, audio-only variant preferred, unreachable manifest.
+- **🆕 `tests/test_live_watchdog.py`** (12 tests): playlist links recognised, refusals before audio end a playlist stream, refusals after audio and ordinary streams are left alone, start timeout, one failure report only, a healthy stream is untouched, and one run with the real FFmpeg against a server that refuses the segments (skipped without FFmpeg).
+- **Changed:** `youtube_bridge/test/media.test.mjs` (+4 tests: token in the link, variant order, newest segment, cache lifetime of a broadcast).
+
+### 📁 Files Changed
+- **New:** `youtube_bridge/live.mjs`, `youtube_bridge/test/live.test.mjs`, `tests/test_live_watchdog.py`.
+- **Changed:** `youtube_bridge/server.mjs`, `youtube_bridge/media.mjs`, `youtube_bridge/test/media.test.mjs`, `bot/player/ffmpeg_engine.py`, `CHANGELOG.md`.
+
+## 📺 Windows Port — Version 4.2.2: YouTube Live Streams Play Again (HTTP 403 Fixed) *(11/09/2026)*
+
+### 🐛 Fixed: live streams on `yt` failed with `HTTP error 403 Forbidden`
+- **🔎 Symptom:** ordinary videos played, but every live broadcast (for example a TV channel) failed at once with `[https @ …] HTTP error 403 Forbidden` in `TTMediaBot.log`, even on the first request. FFmpeg was not at fault: it only received a link YouTube refuses to serve.
+- **🧩 Cause (`youtube_bridge/server.mjs`, `liveVariantUrl`):** the manifest link of a broadcast carries an `n` challenge in its path (`/n/<value>/`). Ordinary video links get it solved through `format.decipher()`, but a broadcast has no format, so the raw value went to FFmpeg and YouTube refused the playlists and segments behind it. yt-dlp had the same problem (issue #15587) and fixed it in PR #15602.
+- **🚀 Fix 1:** the `n` of the manifest link is solved with the player (`solveManifestN`) before the master playlist is read, and a variant that still carries the raw value gets the solved one. Log lines: `live n challenge solved` or, when it cannot be solved, `live n challenge not solved …` / `live n challenge failed …` (the link is then used as it was).
+- **🚀 Fix 2:** the PO token is a path parameter and now goes before the closing `/file/index.m3u8` or `/playlist/index.m3u8` of the manifest link (it was appended behind it). The link with the token is still tried first and the plain link stays the fallback. Log line: `live manifest read via with-po-token link n_solved=… variant_has_pot=…`.
+- **🚀 Fix 3:** a live track sends `Referer: https://www.youtube.com/` with every playlist and segment request (through the track's `http_headers`, which the player already hands to FFmpeg). Ordinary videos keep their old headers.
+- **✅ Checked with a real broadcast** (TV channel, `u` with the live link): FFmpeg opened the playlist, `file-loaded` and `playback-restart` were reached and the broadcast played for over 20 minutes without a single 403. The few `Audio underrun` warnings in that run come from the connection, not from this change.
+
+### 🧪 Tests
+- **Changed:** `youtube_bridge/test/media.test.mjs` (+3 tests, 22 Node tests in all): finding the `n` in a manifest link, putting the solved one in (also with characters like `$&`, which are not read as a replacement pattern), and the place of the PO token in a manifest link.
+
+### 🔖 Version
+- Raised to **4.2.2** (`bot/app_vars.py`). `config.json` needs no change: no setting was added, so `CONFIG_VERSION` stays 2.
+
+### 📁 Files Changed
+- **Changed:** `youtube_bridge/server.mjs`, `youtube_bridge/media.mjs`, `youtube_bridge/test/media.test.mjs`, `bot/app_vars.py`, `CHANGELOG.md`.

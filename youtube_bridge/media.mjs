@@ -141,3 +141,30 @@ export function preferLiveEntries(entries, query) {
   if (!Array.isArray(entries) || !wantsLive(query) || !entries.some((entry) => entry.is_live)) return entries;
   return [...entries.filter((entry) => entry.is_live), ...entries.filter((entry) => !entry.is_live)];
 }
+
+// The n challenge of an HLS/DASH manifest link sits in its path (/n/<value>/), not in a query
+// string. YouTube refuses the playlists and segments behind a manifest link whose n was not
+// solved (HTTP 403 at the first request); yt-dlp fixed the same in PR #15602.
+export function manifestNChallenge(url) {
+  try {
+    return new URL(url).pathname.match(/\/n\/([^/]+)/)?.[1] || '';
+  } catch {
+    return '';
+  }
+}
+
+// Puts the solved n in place of the raw one; the link is returned as it was when there is
+// nothing to replace (no raw value, no solved value, both equal, or the raw one is not in it).
+export function replaceManifestN(url, from, to) {
+  if (!url || !from || !to || from === to) return url;
+  return url.replace(`/n/${from}`, () => `/n/${to}`);
+}
+
+// A PO token is a path parameter of the manifest link and goes before its closing
+// /file/index.m3u8 or /playlist/index.m3u8 (the way yt-dlp builds it), not behind it.
+export function manifestUrlWithPoToken(url, poToken) {
+  if (!url || !poToken) return url;
+  const token = encodeURIComponent(poToken);
+  const match = /^(.*?)(\/(?:file|playlist)\/index\.m3u8)$/.exec(url);
+  return match ? `${match[1]}/pot/${token}${match[2]}` : `${url.replace(/\/+$/, '')}/pot/${token}`;
+}

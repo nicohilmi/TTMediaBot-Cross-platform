@@ -10,11 +10,14 @@ import {
   isLiveRenderer,
   isVideoId,
   liveStreamInfo,
+  manifestNChallenge,
+  manifestUrlWithPoToken,
   musicItemPayload,
   normalizeSearchKey,
   parseHlsMaster,
   pickHlsVariant,
   preferLiveEntries,
+  replaceManifestN,
   streamCacheTtlMs
 } from './media.mjs';
 
@@ -421,25 +424,69 @@ async function fetchPlaylistText(url, timeoutMs) {
   return response.text();
 }
 
+// The n challenge of the manifest link of a broadcast has to be solved, otherwise YouTube
+// answers 403 as soon as FFmpeg asks for the playlists and segments behind it (yt-dlp issue
+// #15587, fixed there by PR #15602). Ordinary video links get this through format.decipher();
+// a broadcast has no format, so the value in the path (/n/<value>/) is solved here with the
+// player and put back. YouTube.js solves the n of a query string, so the value is handed over
+// inside a dummy link. When nothing can be solved the link is returned as it was.
+async function solveManifestN(player, manifestUrl) {
+  const rawN = manifestNChallenge(manifestUrl);
+  const unchanged = { url: manifestUrl, rawN, solvedN: '' };
+  if (!rawN) {
+    console.log('[youtube-bridge] live manifest link carries no n challenge');
+    return unchanged;
+  }
+  if (!player) {
+    console.warn('[youtube-bridge] live n challenge not solved: the YouTube player is unavailable');
+    return unchanged;
+  }
+  const startedAt = performance.now();
+  try {
+    const solvedLink = await player.decipher(`https://manifest.googlevideo.com/n-challenge?n=${encodeURIComponent(rawN)}`);
+    const solvedN = new URL(solvedLink).searchParams.get('n') || '';
+    if (!solvedN || solvedN === rawN) {
+      console.warn('[youtube-bridge] live n challenge not solved: the player returned the value unchanged');
+      return unchanged;
+    }
+    console.log(`[youtube-bridge] live n challenge solved elapsed_ms=${Math.round(performance.now() - startedAt)}`);
+    return { url: replaceManifestN(manifestUrl, rawN, solvedN), rawN, solvedN };
+  } catch (error) {
+    console.warn(`[youtube-bridge] live n challenge failed: ${error?.message || error}`);
+    return unchanged;
+  }
+}
+
 // A live broadcast is an HLS playlist. Its master lists every quality (usually with the picture
 // too); only sound is needed, so the cheapest variant that has sound is handed to FFmpeg
 // (otherwise it may pick the biggest one and download a 720p video just to play audio).
-// Some players append the PO token to the manifest path; that is tried only when the plain
-// link is refused.
-async function liveVariantUrl(manifestUrl, poToken) {
-  const candidates = [manifestUrl];
-  if (poToken) candidates.push(`${manifestUrl.replace(/\/+$/, '')}/pot/${encodeURIComponent(poToken)}`);
+// The master is read with the n solved; the link that carries the PO token in its path is tried
+// first and the plain link only when that one cannot be read. A variant that still carries the
+// raw n gets the solved one. The log line says which link was used (the token itself is never
+// logged).
+async function liveVariantUrl(manifestUrl, poToken, player) {
+  const solved = await solveManifestN(player, manifestUrl);
+  const candidates = [];
+  if (poToken) {
+    candidates.push({ label: 'with-po-token', url: manifestUrlWithPoToken(solved.url, poToken) });
+  }
+  candidates.push({ label: 'plain', url: solved.url });
   const timeoutMs = Number(process.env.YOUTUBE_BRIDGE_PLAYER_TIMEOUT_MS || 8000);
   let lastError = null;
-  for (const candidate of candidates) {
+  for (const { label, url } of candidates) {
     try {
-      const text = await fetchPlaylistText(candidate, timeoutMs);
-      const picked = pickHlsVariant(parseHlsMaster(text, candidate));
-      if (picked) return picked.url;
-      if (/^#EXTINF:/m.test(text)) return candidate; // already a media playlist
+      const text = await fetchPlaylistText(url, timeoutMs);
+      const picked = pickHlsVariant(parseHlsMaster(text, url));
+      const found = picked ? picked.url : (/^#EXTINF:/m.test(text) ? url : ''); // else: already a media playlist
+      if (found) {
+        const variant = replaceManifestN(found, solved.rawN, solved.solvedN);
+        console.log(`[youtube-bridge] live manifest read via ${label} link n_solved=${Boolean(solved.solvedN)} variant_has_pot=${/\/pot\//.test(variant)}`);
+        return variant;
+      }
       lastError = new Error('HLS manifest has no variant with sound');
     } catch (error) {
       lastError = error;
+      console.warn(`[youtube-bridge] live manifest via ${label} link failed: ${error?.message || error}`);
     }
   }
   throw lastError || new Error('HLS manifest could not be read');
@@ -490,7 +537,7 @@ async function resolveFormat(context, videoId, requestedClient, formatOptions) {
       if (liveStream.live) {
         if (!liveStream.hlsUrl) throw new Error('live stream without an HLS manifest');
         const liveStartedAt = performance.now();
-        const url = await liveVariantUrl(liveStream.hlsUrl, poToken);
+        const url = await liveVariantUrl(liveStream.hlsUrl, poToken, session.session.player);
         console.log(`[youtube-bridge] resolved live ${videoId} with client=${client} elapsed_ms=${Math.round(performance.now() - liveStartedAt)}`);
         return {
           info,
@@ -575,6 +622,8 @@ function invalidateResolution(body) {
   return { invalidated: true };
 }
 
+const LIVE_REFERER = 'https://www.youtube.com/';
+
 async function resolveTrackUncached(body, videoId, requestedClient) {
   const context = await getSession(body.cookie_file);
 
@@ -591,7 +640,10 @@ async function resolveTrackUncached(body, videoId, requestedClient) {
     client,
     is_live: Boolean(live) || metadata.is_live,
     format: live ? 'hls' : 'mp3',
-    http_headers: { 'User-Agent': USER_AGENT }
+    // FFmpeg sends these with every playlist and segment request of the broadcast.
+    http_headers: live
+      ? { 'User-Agent': USER_AGENT, 'Referer': LIVE_REFERER }
+      : { 'User-Agent': USER_AGENT }
   };
 }
 

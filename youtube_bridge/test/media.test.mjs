@@ -5,14 +5,18 @@ import {
   isChannelLiveUrl,
   isLiveRenderer,
   isVideoId,
+  lastSegmentUrl,
+  liveCacheTtlMs,
   liveStreamInfo,
   musicItemPayload,
   normalizeSearchKey,
   parseHlsMaster,
   pickHlsVariant,
   preferLiveEntries,
+  rankHlsVariants,
   streamCacheTtlMs,
-  wantsLive
+  wantsLive,
+  withPoToken
 } from '../media.mjs';
 
 test('normalizes equivalent search queries per mode', () => {
@@ -190,4 +194,47 @@ test('cache lifetime follows the expiry in the path of an HLS link', () => {
   const ttl = streamCacheTtlMs('https://manifest.googlevideo.com/api/manifest/hls_playlist/expire/1900000000/itag/91/index.m3u8', now);
   assert.equal(ttl, 8 * 60 * 1000);
   assert.equal(streamCacheTtlMs('https://manifest.googlevideo.com/api/manifest/hls_playlist/itag/91/index.m3u8', now), 5 * 60 * 1000);
+});
+
+test('the PO token is added to the manifest link the way yt-dlp does it', () => {
+  const manifest = 'https://manifest.googlevideo.com/api/manifest/hls_variant/expire/1900000000/file/index.m3u8';
+  assert.equal(withPoToken(manifest, 'AbC-_123='), `${manifest}/pot/AbC-_123=`);
+  // a trailing slash does not give a double slash, the standard base64 alphabet becomes URL-safe
+  assert.equal(withPoToken(`${manifest}/`, 'a+b/c'), `${manifest}/pot/a-b_c`);
+  // without a token the link is left alone
+  assert.equal(withPoToken(manifest, undefined), manifest);
+  assert.equal(withPoToken(manifest, '   '), manifest);
+});
+
+test('variants are ranked: audio-only first, then the cheapest with a picture', () => {
+  const variants = [
+    { url: 'v93', bandwidth: 1210000, hasAudio: true, audioOnly: false },
+    { url: 'v91', bandwidth: 290000, hasAudio: true, audioOnly: false },
+    { url: 'video', bandwidth: 100000, hasAudio: false, audioOnly: false },
+    { url: 'a-high', bandwidth: 130000, hasAudio: true, audioOnly: true },
+    { url: 'a-low', bandwidth: 49000, hasAudio: true, audioOnly: true }
+  ];
+  assert.deepEqual(rankHlsVariants(variants).map((variant) => variant.url), ['a-low', 'a-high', 'v91', 'v93']);
+  assert.equal(pickHlsVariant(variants).url, 'a-low');
+  assert.deepEqual(rankHlsVariants([{ url: 'video', bandwidth: 1, hasAudio: false }]), []);
+  assert.equal(pickHlsVariant([]), null);
+});
+
+test('the newest segment of a media playlist is found and made absolute', () => {
+  const playlist = '#EXTM3U\n#EXT-X-TARGETDURATION:5\n#EXTINF:5.0,\nseg/1.ts\n#EXTINF:5.0,\nseg/2.ts\n';
+  assert.equal(
+    lastSegmentUrl(playlist, 'https://example.test/hls/pot/TOKEN/v91.m3u8'),
+    'https://example.test/hls/pot/TOKEN/seg/2.ts'
+  );
+  assert.equal(lastSegmentUrl('#EXTM3U\n#EXT-X-TARGETDURATION:5\n', 'https://example.test/a.m3u8'), '');
+  assert.equal(lastSegmentUrl('', 'https://example.test/a.m3u8'), '');
+});
+
+test('a broadcast link is cached for ten minutes at most', () => {
+  const now = 1_900_000_000_000 - 3 * 60 * 60 * 1000;
+  const link = 'https://manifest.googlevideo.com/api/manifest/hls_playlist/expire/1900000000/itag/91/index.m3u8';
+  assert.equal(streamCacheTtlMs(link, now), 60 * 60 * 1000); // an ordinary link keeps the old rule
+  assert.equal(liveCacheTtlMs(link, now), 10 * 60 * 1000);
+  // a link that expires sooner than that still wins
+  assert.equal(liveCacheTtlMs(link, 1_900_000_000_000 - 5 * 60 * 1000), 3 * 60 * 1000);
 });
