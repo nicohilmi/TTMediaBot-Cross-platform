@@ -13,6 +13,13 @@ if TYPE_CHECKING:
     from bot.services import Service
 
 
+# YouTube's media servers need a moment to know a freshly issued stream link. A link that is
+# asked for again right after the previous one (invalidate + resolve) is refused with HTTP 403,
+# every time; waiting a few seconds first lets the new one work. refresh_stream() therefore never
+# runs closer than this to the previous fetch of the same track.
+REFRESH_MIN_INTERVAL_SECONDS = 3.0
+
+
 class Track:
     format: str
     type: TrackType
@@ -37,6 +44,8 @@ class Track:
         self._lock = Lock()
         self._is_fetched = False
         self._fetch_failed = False
+        # time.monotonic() of the last time the stream link was asked for (0: never).
+        self._last_stream_fetch_at = 0.0
 
     def download(self, directory: str, video: bool = False) -> str:
         service: Service = get_service_by_name(self.service)
@@ -65,10 +74,24 @@ class Track:
         self.type = track.type
         self.extra_info = track.extra_info
         self._is_fetched = True
+        self._last_stream_fetch_at = time.monotonic()
 
     def refresh_stream(self) -> str:
         if self.service not in ("yt", "ytm"):
             raise RuntimeError("Stream refresh is only supported for YouTube tracks")
+
+        # Wait out the rest of the interval BEFORE taking the lock: the lock also guards
+        # track.name, which other threads read, and a sleep must not hold them up. The caller
+        # is a worker thread (never the audio pump), so a wait of a few seconds is harmless.
+        last_fetch = getattr(self, "_last_stream_fetch_at", 0.0)
+        if last_fetch:
+            wait = REFRESH_MIN_INTERVAL_SECONDS - (time.monotonic() - last_fetch)
+            if wait > 0:
+                logging.info(
+                    f"[Track] stream link of '{self._name}' was fetched {REFRESH_MIN_INTERVAL_SECONDS - wait:.1f} s ago; "
+                    f"waiting {wait:.1f} s before asking for a new one"
+                )
+                time.sleep(wait)
 
         with self._lock:
             original = getattr(self, "_original_track", self)

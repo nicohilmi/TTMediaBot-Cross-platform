@@ -13,6 +13,7 @@ from unittest.mock import Mock, patch
 from bot.player import LIVE_STREAM_HEALTHY_SECONDS, LIVE_STREAM_RETRY_DELAYS, Player
 from bot.player.enums import Mode, State, TrackType
 from bot.services.yt import YtService, is_channel_live_url
+from tests.inline_timer import inline_timers
 
 
 class ChannelLiveUrlTests(TestCase):
@@ -131,14 +132,16 @@ def live_player(retries_done=0, last_position=0.0, requested=True, state=State.P
 
 
 class PlayerLiveStreamTests(TestCase):
-    def test_the_schedule_starts_at_once_and_waits_longer_than_for_a_song(self):
-        self.assertEqual(LIVE_STREAM_RETRY_DELAYS[0], 0.0)
-        self.assertGreater(len(LIVE_STREAM_RETRY_DELAYS), 3)
-        self.assertTrue(all(delay > 0 for delay in LIVE_STREAM_RETRY_DELAYS[1:]))
+    def test_a_broadcast_gets_one_quick_retry_and_no_more(self):
+        # Fail fast: the old schedule had six retries (up to 405 s of silence).
+        self.assertEqual(len(LIVE_STREAM_RETRY_DELAYS), 1)
+        self.assertTrue(0 < LIVE_STREAM_RETRY_DELAYS[0] <= 2.0)
 
     def test_a_broadcast_that_stops_normally_is_picked_up_again_not_skipped(self):
         player = live_player(last_position=900.0)
-        player.on_end_file("eof")
+        with inline_timers() as delays:
+            player.on_end_file("eof")
+        self.assertEqual(delays, [LIVE_STREAM_RETRY_DELAYS[0]])
         player.track.refresh_stream.assert_called_once_with()
         player._play.assert_called_once()
         player.next.assert_not_called()
@@ -146,32 +149,31 @@ class PlayerLiveStreamTests(TestCase):
 
     def test_a_broadcast_never_resumes_at_an_old_position(self):
         player = live_player(last_position=5000.0)
-        player.on_end_file("error", "HTTP error 403 Forbidden")
+        with inline_timers():
+            player.on_end_file("error", "HTTP error 403 Forbidden")
         self.assertEqual(player._play.call_args.kwargs["start_position"], 0.0)
         self.assertTrue(player._play.call_args.kwargs["is_refresh"])
 
     def test_a_broadcast_that_played_for_a_while_starts_a_new_count(self):
-        # six interruptions were used up earlier today; this one is a new interruption
+        # its quick retry was used earlier today; this one is a new interruption
         player = live_player(retries_done=len(LIVE_STREAM_RETRY_DELAYS), last_position=LIVE_STREAM_HEALTHY_SECONDS + 1)
-        player.on_end_file("error", "connection reset")
+        with inline_timers():
+            player.on_end_file("error", "connection reset")
         player.track.refresh_stream.assert_called_once_with()
         self.assertEqual(player.track._stream_retry_count, 1)
 
-    def test_a_broadcast_that_keeps_failing_at_once_is_given_up_after_the_last_delay(self):
+    @patch("bot.player.threading.Timer")
+    def test_a_broadcast_that_keeps_failing_at_once_is_stopped_and_announced(self, timer):
         player = live_player(retries_done=len(LIVE_STREAM_RETRY_DELAYS), last_position=2.0)
         player.on_end_file("error", "HTTP error 403 Forbidden")
+        timer.assert_not_called()  # no second retry
         player.track.refresh_stream.assert_not_called()
-        player.stop.assert_called_once_with()  # the one the person asked for is not replaced by another
-        player.bot.ttclient.send_message.assert_called_once()
+        player.stop.assert_called_once_with()
+        player.next.assert_not_called()
+        text = player.bot.ttclient.send_message.call_args.args[0]
+        self.assertEqual(text, 'The live stream "KOMPAS TV LIVE" has ended.')
 
-    @patch("bot.player.threading.Timer")
-    def test_later_retries_wait_for_their_delay(self, timer):
-        player = live_player(retries_done=3, last_position=0.0)
-        player.on_end_file("error", "")
-        self.assertEqual(timer.call_args.args[0], LIVE_STREAM_RETRY_DELAYS[3])
-        player._play.assert_not_called()
-
-    def test_a_broadcast_that_is_over_is_reported_and_left(self):
+    def test_a_broadcast_that_is_over_is_reported_and_stopped(self):
         player = live_player(last_position=300.0)
 
         def refresh():
@@ -179,21 +181,24 @@ class PlayerLiveStreamTests(TestCase):
             return "https://fresh.test/recording"
 
         player.track.refresh_stream = Mock(side_effect=refresh)
-        player.on_end_file("eof")
+        with inline_timers():
+            player.on_end_file("eof")
         player._play.assert_not_called()
-        player.next.assert_called_once_with()
+        player.next.assert_not_called()
+        player.stop.assert_called_once_with()
         text = player.bot.ttclient.send_message.call_args.args[0]
         self.assertEqual(text, 'The live stream "KOMPAS TV LIVE" has ended.')
 
-    @patch("bot.player.threading.Timer")
-    def test_a_broadcast_that_cannot_be_reached_for_a_moment_is_asked_for_again(self, timer):
+    def test_a_broadcast_that_cannot_be_reached_by_the_quick_retry_is_stopped_and_announced(self):
         player = live_player(last_position=300.0)
         player.track.refresh_stream = Mock(side_effect=RuntimeError("bridge down"))
-        player.on_end_file("eof")
-        # the first retry was immediate and failed; the next one waits for its delay
-        self.assertEqual(timer.call_args.args[0], LIVE_STREAM_RETRY_DELAYS[1])
-        player.stop.assert_not_called()
+        with inline_timers() as delays:
+            player.on_end_file("eof")
+        self.assertEqual(delays, [LIVE_STREAM_RETRY_DELAYS[0]])  # no second attempt is scheduled
+        player.track.refresh_stream.assert_called_once_with()
+        player.stop.assert_called_once_with()
         player.next.assert_not_called()
+        player.bot.ttclient.send_message.assert_called_once()
 
     def test_a_song_that_ends_normally_still_goes_on_to_the_next_track(self):
         player = live_player(last_position=300.0)

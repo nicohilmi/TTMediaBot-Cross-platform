@@ -1150,3 +1150,52 @@ Reported by Nico Hilmi with `TTMediaBot.log` and `youtube_bridge.log` of 10/25/2
 
 ### 📁 Files Changed
 - **Changed:** `youtube_bridge/server.mjs`, `youtube_bridge/media.mjs`, `youtube_bridge/test/media.test.mjs`, `bot/app_vars.py`, `CHANGELOG.md`.
+
+## 📺 Windows Port — Version 4.2.3: Streams That Fail Are Reported at Once, the Audio Pump Is Never Blocked *(11/16/2026)*
+
+Reported by Nico Hilmi with `TTMediaBot.log` of 11/08/2026 and a technical report. Every finding was checked against the code and the log first; what the log does not prove is said so below.
+
+### 🐛 Fixed: silence for minutes after a stream broke (fail fast)
+- **🔎 Symptom:** when a live broadcast (or a track that got `HTTP 403`) broke, the player went on retrying with growing pauses and the channel stayed silent without a word. The stall summary of that log counts `56 underruns (405.44 s without audio)`.
+- **🚀 Fix (`bot/player/__init__.py`):** the bot now says what happened at once and stops cleanly.
+  - A **live broadcast** gets ONE quick retry after 1.5 s (`LIVE_STREAM_RETRY_DELAYS = (1.5,)`). A stream that had played for 60 s or more before it broke starts a new count, so a broadcast that drops twice a day still gets its quick retry each time. If the retry fails, the chat gets `The live stream "…" has ended.` and the bot calls `stop()`.
+  - A broadcast whose new link leads to the recording (it is over) is reported and stopped too; it no longer moves on to the next track or to autoplay.
+  - An **ordinary track** is not retried automatically any more (`STREAM_RETRY_DELAYS = ()`). The chat is told at once: a track the user asked for stops, a track that came from a list is skipped with the usual message. `r 1` a few seconds later works, as before. Put `(2.0,)` in `STREAM_RETRY_DELAYS` to allow one retry for ordinary tracks again.
+  - No new message text was added, so the translation files are unchanged.
+
+### 🐛 Fixed: the audio pump thread was blocked for up to 30 s
+- **🧩 Cause:** `_retry_failed_stream` ran `_run_stream_retry` on the calling thread when the delay was 0. That thread is `FFmpegPump`, and `Track.refresh_stream()` asks the Node.js bridge (`127.0.0.1:4417`), whose read timeout is 30 s (`Read timed out (read timeout=30)` in the log).
+- **🚀 Fix:** the retry always runs on a thread of its own (`StreamRetry`, a daemon `threading.Timer`, also with a delay of 0). The bridge call can be slow, so the track and the play token are checked again before anything is done with its result: a retry that finished after the user played, stopped or skipped is dropped.
+
+### 🐛 Fixed: a new thread every 50 s (Thread-11 … Thread-1003)
+- **🧩 Cause (`bot/__init__.py`):** the main loop started `_perform_periodic_pre_warm` in a new thread every 50 s. `_pre_warm()` returns at once for a service that is warm, so each thread only wrote two log lines (about 2000 lines in that log).
+- **🚀 Fix:** `_start_periodic_pre_warm` starts a thread only when an enabled `yt` or `ytm` service is not warm yet, and never a second one while the first is running. Services are read from the manager's table; `get_service_by_name` raises for a disabled service, which the old code logged as an error each time.
+
+### 🐛 Fixed: the queue grew from 16 to 76 songs when skipping fast
+- **🧩 Cause:** every track change asked for recommendations (`remaining <= 4`), and the guard against double requests was per video, so `n`, `n`, `n` started one fetch of about 15 songs for each different video. `search` and `get` in the services added their own requests.
+- **🚀 Fix (`bot/player/autoplay_gate.py`, new):** one gate for every request. A burst of requests becomes one fetch for the last video, 1.5 s after the burst; one fetch at a time; at least 20 s between two starts; and the fetch only runs if the list still has 4 songs or fewer left after the current one (`Player.autoplay_needed()`), so a list that was just refilled is left alone. The fetch runs on the gate's own thread. `yt` and `ytm` send `_fetch_autoplay_async` through the same gate. The fetch that `next()` makes when the list has really run out is not delayed.
+
+### 🐛 Fixed: a fresh stream link was asked for too soon after the previous one
+- **🧩 Cause (`bot/player/track.py`):** `refresh_stream()` invalidated the bridge cache and resolved a new link at once. YouTube's media servers can refuse a link that has only just been issued, so asking again immediately gets `HTTP 403` again, while the same link works a few seconds later (`r 1` by hand).
+- **🚀 Fix:** `refresh_stream()` waits until 3 s have passed since the last fetch of that track (`REFRESH_MIN_INTERVAL_SECONDS`). The wait happens before the track's lock is taken, so reading `track.name` is never held up.
+- **ℹ️ Not proven:** how long YouTube needs is not documented; the 3 s is a safe minimum, and the single retry above is spaced by it too.
+
+### 🔧 Changed: HLS options for FFmpeg 9 (YouTube broadcasts only)
+- **🔎 What the log shows:** a broadcast that had played for about 9,560 s (2 h 39 min) ended with a TLS read error, then `URL … is not in allowed_segment_extensions … Failed to reload playlist 0`, then exit code `3221225477` (`0xC0000005`). The cut-off link in that line suggests a playlist that was read only in part. Since January 2025 the HLS demuxer refuses segment links without a known extension (`extension_picky`, the CVE-2023-6602 fix).
+- **🚀 Change (`bot/player/ffmpeg_engine.py`):** a YouTube / Google Video HLS playlist gets `-extension_picky 0 -allowed_extensions ALL -allowed_segment_extensions ALL -reconnect_at_eof 1` before `-i`. They are demuxer options: on a WebM, MP3 or radio input FFmpeg stops with `Option not found`, so they are added only when
+  - the link is an HLS playlist (`.m3u8`, a YouTube manifest link, or the player says the broadcast is `hls`); `yt_live_broadcast` and `live=1` alone do not count, because live links that are not HLS carry them too;
+  - the host is `googlevideo.com` or `youtube.com`; playlists from other hosts keep FFmpeg's security check;
+  - and this FFmpeg lists the option (`ffmpeg -h demuxer=hls`, cached). `extension_picky` (January 2025) and `allowed_segment_extensions` (May 2025) do not always come together.
+- **⚠️ Not proven:** these options are a safeguard; the log does not show that they prevent the access violation, which looks like a fault of that FFmpeg build on its error path. What the bot does when FFmpeg dies is the fail-fast rule above: a message and a clean stop, no silent channel.
+
+### 🧪 Tests
+- **🆕 `tests/test_failfast_and_hls.py`** (24 tests): which links are HLS, the HLS options before `-i` and never on ordinary songs or other hosts, an option the build does not list is left out, the retry runs on its own thread while the caller returns at once, a late retry is dropped, the refresh interval, no pre-warm thread when everything is warm, the autoplay gate (burst, minimum interval, list refilled, failure, cancel) and the player's use of it.
+- **🆕 `tests/inline_timer.py`:** a stand-in for `threading.Timer` that runs the retry on the calling thread, so the older retry tests stay deterministic.
+- **Changed:** `tests/test_live_streams.py`, `tests/test_playback_failure_handling.py`, `tests/test_player_stream_retry.py` (they described the old schedule of three and six retries; they now describe one quick retry for a broadcast and none for ordinary tracks, and test the mechanism of a retry with one allowed).
+
+### 🔖 Version
+- Raised to **4.2.3** (`bot/app_vars.py`). `config.json` needs no change: no setting was added, so `CONFIG_VERSION` stays 2.
+
+### 📁 Files Changed
+- **New:** `bot/player/autoplay_gate.py`, `tests/inline_timer.py`, `tests/test_failfast_and_hls.py`.
+- **Changed:** `bot/player/__init__.py`, `bot/player/ffmpeg_engine.py`, `bot/player/track.py`, `bot/__init__.py`, `bot/services/yt.py`, `bot/services/ytm.py`, `bot/app_vars.py`, `tests/test_live_streams.py`, `tests/test_playback_failure_handling.py`, `tests/test_player_stream_retry.py`, `CHANGELOG.md`.

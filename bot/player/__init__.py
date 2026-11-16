@@ -15,6 +15,7 @@ from bot.player.ffmpeg_engine import (
     FADE_SUPERSEDED,
     FFmpegEngine,
 )
+from bot.player.autoplay_gate import AUTOPLAY_REFILL_THRESHOLD, AutoplayGate
 from bot.player.track import Track
 from bot.player.queue_manager import QueueManager
 
@@ -33,16 +34,21 @@ DEFAULT_USER_AGENT = (
 RESUME_AFTER_ERROR_MIN_SECONDS = 3.0
 
 
-# Seconds to wait before each retry of a YouTube stream that failed to load. The
-# first retry is immediate (it fixes an expired URL). The later ones wait because
-# YouTube can refuse a fresh media URL (HTTP 403) for a few seconds on some videos;
-# yt-dlp sleeps for the same reason. After the last retry the track is given up.
-STREAM_RETRY_DELAYS = (0.0, 3.0, 5.0)
+# Fail fast. The owner of the bot prefers a clear message over a silent channel: when a stream
+# cannot be opened or breaks, the bot says so in the chat at once instead of retrying for minutes
+# (the old schedule of 6 live retries meant up to 405 s without sound).
+#
+# Seconds to wait before each automatic retry of an ordinary YouTube track that failed to
+# load. None: the chat is told at once and the user plays it again (``r 1``) a few seconds later,
+# which is what works when YouTube refuses a fresh media URL (HTTP 403) for a moment. Put
+# (2.0,) here to allow one retry for ordinary tracks as well.
+STREAM_RETRY_DELAYS: tuple = ()
 
-# A live broadcast (a TV channel, an event) is expected to be interrupted now and then: the
-# playlist link expires after some hours and the connection drops. It is picked up again for as
-# long as it keeps coming back; the count starts over once the stream has played for a while.
-LIVE_STREAM_RETRY_DELAYS = (0.0, 3.0, 5.0, 10.0, 15.0, 30.0)
+# A live broadcast gets ONE quick retry, to get over a connection that dropped for a moment.
+# The second failure is final: the chat is told that the broadcast ended and playback stops.
+# A stream that played for LIVE_STREAM_HEALTHY_SECONDS before it broke starts a new count, so a
+# broadcast that is interrupted twice a day still gets its one quick retry each time.
+LIVE_STREAM_RETRY_DELAYS = (1.5,)
 LIVE_STREAM_HEALTHY_SECONDS = 60.0
 
 
@@ -107,6 +113,8 @@ class Player:
         self._prefetch_timer: Optional[threading.Timer] = None
 
         self.queue: QueueManager = QueueManager()
+        # One gate for every autoplay fetch (see bot/player/autoplay_gate.py).
+        self.autoplay_gate = AutoplayGate(self.autoplay_needed)
 
     def initialize(self) -> None:
         logging.debug("Initializing player")
@@ -118,6 +126,7 @@ class Player:
     def close(self) -> None:
         logging.debug("Closing player")
         self._cancel_prefetch()
+        self.autoplay_gate.cancel()
         if self.state != State.Stopped:
             self.stop()
         self._engine.close()
@@ -209,11 +218,20 @@ class Player:
         other_headers = {
             key: value for key, value in headers.items() if key.lower() != "user-agent"
         }
+        # A broadcast from the YouTube bridge is an HLS playlist and says so (format "hls"); the
+        # engine then adds the HLS-only ffmpeg options. Everything else is judged by its link.
+        play_options: Dict[str, Any] = {}
+        if (
+            getattr(self.track, "type", None) == TrackType.Live
+            and str(extra_info.get("format", "")).lower() == "hls"
+        ):
+            play_options["hls"] = True
         self._engine.play(
             arg,
             start=start_position,
             headers=other_headers,
             user_agent=user_agent,
+            **play_options,
         )
         self._log_playback_timing("ffmpeg_play_submitted", trace)
         self._schedule_prefetch()
@@ -401,27 +419,40 @@ class Player:
                 return url.split("/")[-1].split("?")[0]
         return None
 
-    def _check_and_trigger_autoplay(self) -> None:
-        try:
-            if not self.track_list or self.mode == Mode.SingleTrack or self.is_playlist:
-                return
-            remaining = len(self.track_list) - 1 - self.track_index
-            if remaining <= 4:
-                candidates = []
-                if self.track:
-                    candidates.append(self.track)
-                for t in reversed(self.track_list):
-                    if t not in candidates:
-                        candidates.append(t)
+    def autoplay_needed(self) -> bool:
+        """True when a recommendation fetch would help: autoplay applies to this list and few
+        songs are left after the current one. Also asked again just before a fetch runs."""
+        if not self.track_list or self.mode == Mode.SingleTrack or self.is_playlist:
+            return False
+        return len(self.track_list) - 1 - self.track_index <= AUTOPLAY_REFILL_THRESHOLD
 
-                for cand in candidates:
-                    target_id = self._get_track_video_id(cand)
-                    if target_id:
-                        service_name = getattr(cand, "service", None) or self.bot.service_manager.service.name
-                        service = self.bot.service_manager.get_service_by_name(service_name)
-                        if hasattr(service, "_fetch_autoplay_async"):
-                            service._fetch_autoplay_async(target_id)
-                            break
+    def _check_and_trigger_autoplay(self) -> None:
+        """Ask for more autoplay songs when few are left.
+
+        Never fetches by itself: the request goes through ``autoplay_gate``, which turns a burst of
+        requests (skipping n, n, n) into a single fetch for the last track, runs it on its own
+        thread, and drops it when the list has been refilled meanwhile. Without it every skip
+        started a fetch for another video and the list grew from 16 to 76 songs.
+        """
+        try:
+            if not self.autoplay_needed():
+                return
+            candidates = []
+            if self.track:
+                candidates.append(self.track)
+            for t in reversed(self.track_list):
+                if t not in candidates:
+                    candidates.append(t)
+
+            for cand in candidates:
+                target_id = self._get_track_video_id(cand)
+                if target_id:
+                    service_name = getattr(cand, "service", None) or self.bot.service_manager.service.name
+                    service = self.bot.service_manager.get_service_by_name(service_name)
+                    fetch = getattr(service, "_fetch_autoplay_sync", None)
+                    if fetch is not None:
+                        self.autoplay_gate.request(fetch, target_id)
+                        break
         except Exception as e:
             logging.debug(f"[Player] Autoplay check trigger error: {e}")
 
@@ -733,32 +764,46 @@ class Player:
             f"delay={delay:.1f}s error={error[:200]!r}"
         )
         token = getattr(self, "_play_token", 0)
-        if delay <= 0:
-            self._run_stream_retry(track, resume_at, token)
-        else:
-            timer = threading.Timer(
-                delay, self._run_stream_retry, args=(track, resume_at, token)
-            )
-            timer.daemon = True
-            timer.start()
+        # Always on a thread of its own, even with no delay: this method is reached from the
+        # FFmpegPump thread, and refresh_stream() asks the Node.js bridge, which can take up to
+        # its 30 s read timeout. A Timer is a thread, so a delay of 0 starts one at once.
+        timer = threading.Timer(
+            max(delay, 0.0), self._run_stream_retry, args=(track, resume_at, token)
+        )
+        timer.daemon = True
+        timer.name = "StreamRetry"
+        timer.start()
         return True
 
+    def _stream_retry_is_current(self, track: Track, token: int) -> bool:
+        return (
+            self.track is track
+            and token == getattr(self, "_play_token", 0)
+            and self.state == State.Playing
+        )
+
     def _run_stream_retry(self, track: Track, resume_at: float, token: int) -> None:
-        if (
-            self.track is not track
-            or token != getattr(self, "_play_token", 0)
-            or self.state != State.Playing
-        ):
+        """Fetch a fresh link and play it again. Runs on a worker thread, never on FFmpegPump.
+
+        The bridge call can take a long time, so the user may have played, stopped or skipped
+        meanwhile: the track and play token are checked again before anything is done with the
+        result. A failure is final (no further automatic attempt): the chat is told and playback
+        stops (or, for a song that follows another one, moves on).
+        """
+        if not self._stream_retry_is_current(track, token):
             logging.debug("[Player] stream retry dropped: playback changed meanwhile")
             return
         was_live = self._is_live_stream(track)
         try:
             refreshed_url = track.refresh_stream()
+            if not self._stream_retry_is_current(track, token):
+                logging.debug("[Player] stream retry dropped: playback changed during the refresh")
+                return
             if was_live and track.type != TrackType.Live:
                 # The link now leads to the recording of the broadcast: it is over.
                 logging.info(f"[Player] live stream ended: {track.name!r}")
                 self._notify_live_ended(track)
-                self._advance_after_track_end()
+                self.stop()
                 return
             self._play(
                 refreshed_url,
@@ -771,24 +816,30 @@ class Player:
                 "[PlaybackTiming] youtube_stream_refresh_failed "
                 f"track={track.name!r} error={refresh_error!r}"
             )
-            if was_live and self._retry_failed_stream(str(refresh_error)):
-                return  # a broadcast that is not reachable for a moment is asked for again
+            if not self._stream_retry_is_current(track, token):
+                return
             if self._give_up_on_stream(track, str(refresh_error)):
                 self._advance_after_track_end()
 
     def _give_up_on_stream(self, track: Track, error: str) -> bool:
-        """Report a track that could not be played after every retry.
+        """Report a track or broadcast that could not be played (or played on).
 
         Returns True when the caller should go on to the next track, False when
-        playback was stopped. The track the user asked for is never replaced by
-        another song behind their back.
+        playback was stopped. A live broadcast always ends in a message and a clean
+        stop(). The track the user asked for is never replaced by another song behind
+        their back.
         """
         explicit = track is getattr(self, "_requested_track", None)
+        live = self._is_live_stream(track)
         logging.error(
             "[PlaybackTiming] youtube_stream_unplayable "
             f"track={track.name!r} attempts={getattr(track, '_stream_retry_count', 0)} "
-            f"requested_by_user={explicit} error={error[:200]!r}"
+            f"requested_by_user={explicit} live={live} error={error[:200]!r}"
         )
+        if live:
+            self._notify_live_ended(track)
+            self.stop()
+            return False
         self._notify_unplayable(track, skipping=not explicit)
         if explicit:
             self.stop()

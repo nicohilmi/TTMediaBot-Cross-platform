@@ -208,6 +208,13 @@ class YtmService(_Service):
         return [track]
 
     def _fetch_autoplay_async(self, video_id: str) -> None:
+         # Every trigger (search, get, the player's "few tracks left" check) shares the player's
+         # gate: a burst of requests becomes one fetch, off the caller's thread, and only when the
+         # list still needs songs. Without a gate (tests, a player not yet created) fetch directly.
+         gate = getattr(getattr(self.bot, "player", None), "autoplay_gate", None)
+         if gate is not None:
+             gate.request(self._fetch_autoplay_sync, video_id)
+             return
          threading.Thread(target=self._fetch_autoplay_sync, args=(video_id,), daemon=True, name=f"Autoplay_{video_id}").start()
 
     # Autoplay is fetched from several places at once (search and the "few tracks

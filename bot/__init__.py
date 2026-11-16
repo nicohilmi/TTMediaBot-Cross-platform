@@ -148,6 +148,7 @@ class Bot:
         # Periodic Pre-warming tracking
         self.last_pre_warm_time = time.time()
         self.pre_warm_interval = 50 # 50 seconds (User request: 'oi' every 50s)
+        self._pre_warm_thread: Optional[threading.Thread] = None
 
         self._close = False
         while not self._close:
@@ -162,10 +163,10 @@ class Bot:
             except queue.Empty:
                 pass
             
-            # Check for periodic pre-warming
+            # Check for periodic pre-warming (starts a thread only when a service still needs it)
             if time.time() - self.last_pre_warm_time >= self.pre_warm_interval:
                 self.last_pre_warm_time = time.time()
-                threading.Thread(target=self._perform_periodic_pre_warm, daemon=True).start()
+                self._start_periodic_pre_warm()
 
             # The TeamTalk event thread is the only reader of the TeamTalk queue. If it
             # ever ends by itself the bot can no longer hear any command, so stop (and
@@ -224,19 +225,48 @@ class Bot:
         except OSError:
             pass
 
+    def _services_needing_pre_warm(self) -> list:
+        """The enabled YouTube services that are not warmed up yet.
+
+        A service that is warm (_is_warmed) makes _pre_warm() return at once, so a thread for it
+        only wrote two log lines. It used to be started every 50 s regardless: the log of one
+        run reached Thread-1003 with nothing done in any of them. Services are read from the
+        manager's table instead of get_service_by_name(), which raises for a disabled service.
+        """
+        services = getattr(getattr(self, "service_manager", None), "services", None) or {}
+        pending = []
+        for name in ("yt", "ytm"):
+            service = services.get(name)
+            if (
+                service is not None
+                and getattr(service, "is_enabled", True)
+                and hasattr(service, "_pre_warm")
+                and not getattr(service, "_is_warmed", False)
+            ):
+                pending.append(service)
+        return pending
+
+    def _start_periodic_pre_warm(self) -> None:
+        """Start the pre-warming thread, but only when there is something left to warm and the
+        previous run is over. When every service is warm no thread is created at all."""
+        running = getattr(self, "_pre_warm_thread", None)
+        if running is not None and running.is_alive():
+            return
+        if not self._services_needing_pre_warm():
+            return
+        self._pre_warm_thread = threading.Thread(
+            target=self._perform_periodic_pre_warm, daemon=True, name="PeriodicPreWarm"
+        )
+        self._pre_warm_thread.start()
+
     def _perform_periodic_pre_warm(self):
+        pending = self._services_needing_pre_warm()
+        if not pending:
+            return
         logging.info("Starting periodic pre-warming for services...")
         try:
-            # Pre-warm YouTube if enabled
-            yt = self.service_manager.get_service_by_name("yt")
-            if yt and hasattr(yt, "_pre_warm"):
-                yt._pre_warm()
-            
-            # Pre-warm YouTube Music if enabled
-            ytm = self.service_manager.get_service_by_name("ytm")
-            if ytm and hasattr(ytm, "_pre_warm"):
-                ytm._pre_warm()
-                
+            for service in pending:
+                service._pre_warm()
             logging.info("Periodic pre-warming cycle completed.")
         except Exception as e:
             logging.error(f"Error during periodic pre-warming: {e}")

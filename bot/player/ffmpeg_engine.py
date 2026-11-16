@@ -25,6 +25,7 @@ import threading
 import time
 from collections import deque
 from typing import Any, Callable, Deque, Dict, List, Optional, Set
+from urllib.parse import urlsplit
 
 from bot.ffmpeg_locator import hidden_process_kwargs
 
@@ -88,6 +89,8 @@ _METADATA_RE = re.compile(r"^\s{4}(\S.*?)\s*:\s?(.*)$")
 
 _HTTP_OPTIONS_CACHE: Dict[str, Set[str]] = {}
 _HTTP_OPTIONS_LOCK = threading.Lock()
+_HLS_OPTIONS_CACHE: Dict[str, Set[str]] = {}
+_HLS_OPTIONS_LOCK = threading.Lock()
 
 
 def volume_to_gain(volume: float, curve: str = "cubic") -> float:
@@ -177,6 +180,74 @@ def _supported_http_options(ffmpeg_path: str) -> Set[str]:
     return names
 
 
+def _supported_hls_options(ffmpeg_path: str) -> Set[str]:
+    """Names of the options of the HLS *demuxer* this ffmpeg build understands.
+
+    ``extension_picky`` (January 2025) and ``allowed_segment_extensions`` (May 2025) are newer
+    than many FFmpeg builds, and one is found without the other. An option the build does not
+    know makes ffmpeg refuse the whole input ("Option not found"), so each one is only passed
+    when it is listed. An empty result (the query failed) means: pass none of them.
+    """
+    with _HLS_OPTIONS_LOCK:
+        cached = _HLS_OPTIONS_CACHE.get(ffmpeg_path)
+        if cached is not None:
+            return cached
+    names: Set[str] = set()
+    try:
+        result = subprocess.run(
+            [ffmpeg_path, "-hide_banner", "-h", "demuxer=hls"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=15,
+            **hidden_process_kwargs(),
+        )
+        text = result.stdout.decode("utf-8", errors="replace")
+        names = set(re.findall(r"^\s+-([a-z_]+)\s", text, flags=re.MULTILINE))
+    except (OSError, subprocess.SubprocessError) as error:
+        logging.warning(f"[FFmpeg] Could not query HLS options: {error}")
+    with _HLS_OPTIONS_LOCK:
+        _HLS_OPTIONS_CACHE[ffmpeg_path] = names
+    return names
+
+
+# A link that is an HLS playlist. ".m3u8" must end the path (or be followed by a separator), so a
+# song called "x.m3u8.mp3" is not taken for a playlist. The other markers are the way YouTube
+# names its manifests and playlists (hls_variant / hls_playlist / hls_chunk_host).
+_HLS_PATH_RE = re.compile(r"\.m3u8?(?=$|[/?#&;,])", re.IGNORECASE)
+_HLS_URL_MARKERS = ("/hls_variant/", "/hls_playlist/", "hls_chunk_host")
+# Hosts whose playlists get the relaxed segment-extension check (see _relax_hls_extensions).
+_TRUSTED_HLS_HOST_SUFFIXES = ("googlevideo.com", "youtube.com")
+
+
+def is_hls_url(url: str) -> bool:
+    """True when ``url`` is an HLS playlist.
+
+    Deliberately strict. ``yt_live_broadcast`` and ``live=1`` also appear in YouTube links of live
+    streams that are NOT HLS, and passing an HLS demuxer option to such an input makes ffmpeg fail
+    with "Option not found". Those two markers therefore never decide on their own; the caller
+    may say "this is HLS" explicitly when it knows (the YouTube bridge does for broadcasts).
+    """
+    if not url:
+        return False
+    lowered = url.lower()
+    if not lowered.startswith(("http://", "https://")):
+        return False
+    try:
+        path = urlsplit(lowered).path
+    except ValueError:
+        return False
+    return bool(_HLS_PATH_RE.search(path)) or any(marker in lowered for marker in _HLS_URL_MARKERS)
+
+
+def _is_trusted_hls_host(url: str) -> bool:
+    try:
+        host = (urlsplit(url).hostname or "").lower()
+    except ValueError:
+        return False
+    return any(host == suffix or host.endswith("." + suffix) for suffix in _TRUSTED_HLS_HOST_SUFFIXES)
+
+
 class AudioSink:
     """Where decoded PCM goes. Implemented by the TeamTalk wrapper."""
 
@@ -188,14 +259,21 @@ class AudioSink:
 
 
 class _Request:
-    __slots__ = ("url", "headers", "user_agent")
+    __slots__ = ("url", "headers", "user_agent", "hls")
 
     def __init__(
-        self, url: str, headers: Optional[Dict[str, str]], user_agent: Optional[str]
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]],
+        user_agent: Optional[str],
+        hls: Optional[bool] = None,
     ) -> None:
         self.url = url
         self.headers = dict(headers or {})
         self.user_agent = user_agent
+        # True / False when the caller knows whether the link is an HLS playlist,
+        # None to decide from the link itself.
+        self.hls = hls
 
 
 class _Session:
@@ -362,13 +440,17 @@ class FFmpegEngine:
         start: float = 0.0,
         headers: Optional[Dict[str, str]] = None,
         user_agent: Optional[str] = None,
+        hls: Optional[bool] = None,
     ) -> None:
         """Start playing ``url`` (replacing whatever is playing). Never blocks
-        on the network; failures are reported through ``on_end``."""
+        on the network; failures are reported through ``on_end``.
+
+        ``hls`` says whether ``url`` is an HLS playlist when the caller knows (a live
+        broadcast from the YouTube bridge); ``None`` decides from the link."""
         with self._op_lock:
             if self._closed:
                 return
-            self._request = _Request(url, headers, user_agent)
+            self._request = _Request(url, headers, user_agent, hls)
             self._run_event.set()
             self._start_session(max(start, 0.0))
 
@@ -510,6 +592,7 @@ class FFmpegEngine:
                 if flag in supported:
                     cmd += ["-" + flag, value]
             cmd += ["-rw_timeout", str(int(self._network_timeout * 1_000_000))]
+            cmd += self._relaxed_hls_options(request, supported)
         if start > 0.05:
             cmd += ["-ss", "{:.3f}".format(start)]
         cmd += ["-i", request.url, "-vn", "-sn", "-dn"]
@@ -523,6 +606,34 @@ class FFmpegEngine:
             "pipe:1",
         ]
         return cmd
+
+    def _relaxed_hls_options(self, request: _Request, http_options: Set[str]) -> List[str]:
+        """Options for a YouTube HLS playlist, and only for that.
+
+        Since January 2025 the HLS demuxer refuses a segment whose link does not end in a known
+        extension (``extension_picky``, the CVE-2023-6602 fix). YouTube's segment links often
+        have none. These options are demuxer options: given to any other input (WebM, MP3, a
+        radio stream) ffmpeg stops with "Option not found" and the song cannot be played. So they
+        are added only for a link that is an HLS playlist, on a YouTube / Google Video host
+        (the check stays on for playlists from anywhere else, which the users of the bot can
+        type in), and each one only when this ffmpeg build lists it.
+        """
+        is_hls = request.hls if request.hls is not None else is_hls_url(request.url)
+        if not is_hls or not _is_trusted_hls_host(request.url):
+            return []
+        hls_options = _supported_hls_options(self._ffmpeg)
+        options: List[str] = []
+        for name, value in (
+            ("extension_picky", "0"),
+            ("allowed_extensions", "ALL"),
+            ("allowed_segment_extensions", "ALL"),
+        ):
+            if name in hls_options:
+                options += ["-" + name, value]
+        # reconnect_at_eof belongs to the HTTP protocol, not to the HLS demuxer.
+        if "reconnect_at_eof" in http_options:
+            options += ["-reconnect_at_eof", "1"]
+        return options
 
     def _start_session(self, start: float) -> None:
         request = self._request

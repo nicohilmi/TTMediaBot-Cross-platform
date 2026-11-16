@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 from bot.player import Player, STREAM_RETRY_DELAYS
 from bot.player.enums import Mode, State
+from tests.inline_timer import inline_timers
 
 
 def make_player(retries_done=0, requested=True, state=State.Playing):
@@ -36,30 +37,30 @@ def make_player(retries_done=0, requested=True, state=State.Playing):
 
 
 class StreamRetryScheduleTests(TestCase):
-    def test_retry_delays_start_immediately_then_wait(self):
-        self.assertEqual(STREAM_RETRY_DELAYS[0], 0.0)
-        self.assertTrue(all(delay > 0 for delay in STREAM_RETRY_DELAYS[1:]))
+    def test_an_ordinary_track_is_not_retried_automatically(self):
+        # Fail fast: the chat is told at once and the user plays the track again (r 1).
+        self.assertEqual(STREAM_RETRY_DELAYS, ())
 
     @patch("bot.player.threading.Timer")
-    def test_second_failure_waits_instead_of_retrying_at_once(self, timer):
-        player = make_player(retries_done=1)
+    def test_the_first_failure_goes_straight_to_the_announcement(self, timer):
+        player = make_player(retries_done=0, requested=True)
 
         player.on_end_file("error", "HTTP error 403 Forbidden")
 
-        timer.assert_called_once()
-        self.assertEqual(timer.call_args.args[0], STREAM_RETRY_DELAYS[1])
-        timer.return_value.start.assert_called_once_with()
+        timer.assert_not_called()
+        player.track.refresh_stream.assert_not_called()
         player._play.assert_not_called()
-        player.next.assert_not_called()
-        self.assertEqual(player.track._stream_retry_count, 2)
+        player.stop.assert_called_once_with()
+        player.bot.ttclient.send_message.assert_called_once()
 
-    @patch("bot.player.threading.Timer")
-    def test_third_failure_waits_longer(self, timer):
-        player = make_player(retries_done=2)
-
-        player.on_end_file("error", "")
-
-        self.assertEqual(timer.call_args.args[0], STREAM_RETRY_DELAYS[2])
+    def test_when_a_retry_is_allowed_it_waits_for_its_delay_and_runs_on_a_timer(self):
+        player = make_player(retries_done=0)
+        with patch("bot.player.STREAM_RETRY_DELAYS", (2.0,)), inline_timers() as delays:
+            player.on_end_file("error", "HTTP error 403 Forbidden")
+        self.assertEqual(delays, [2.0])
+        player.track.refresh_stream.assert_called_once_with()
+        player._play.assert_called_once()
+        self.assertEqual(player.track._stream_retry_count, 1)
 
     def test_scheduled_retry_refreshes_and_plays(self):
         player = make_player(retries_done=2)
